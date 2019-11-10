@@ -1,7 +1,24 @@
 "use strict";
 require('dotenv').config();
-let TelegramBot = require('node-telegram-bot-api');
+const TelegramBot = require('node-telegram-bot-api'); //Библиотека для TelegramAPI
+const nodemailer = require('nodemailer'); //Библиотека для отправки писем
+const express = require('express'); //Библиотека для веб-морды
+const fs = require("fs");
 
+let app = express();
+
+app.get('/', function (req, res) {
+  res.send(`<html>
+              <head>
+              </head>
+              <body>Привет, я кофебот, а ты нет.</body>
+            </html>`);
+});
+
+
+app.listen(4433, function () {
+  console.log(`Веб версия запущена на порту 4433`);
+});
 /*
 Если нет хостинга с ssl сертификатом, то можно включить polling, но тогда понадобится прокси
 https://hidemy.name/ru/proxy-list/
@@ -31,9 +48,31 @@ class Coffee {
     this.people = [];
     this.userStorage = [];
   }
+
+  readFromDB() {
+    let tempJSONPeople = JSON.parse(fs.readFileSync('people.db', 'utf8'));
+    let tempJSONUs = JSON.parse(fs.readFileSync('us.db', 'utf8'));
+
+    this.people = Object.keys(tempJSONPeople).map(e => tempJSONPeople[e]);
+    this.userStorage = Object.keys(tempJSONUs).map(e => tempJSONUs[e]);
+  }
+  writeToDB() {
+    let tempJSONPeople = new Object();
+    for(let i = 0; i < this.people.length;i++){
+      tempJSONPeople[`${i}`] = this.people[i];
+    }
+    let tempJSONUs = new Object();
+    for(let i = 0; i < this.userStorage.length;i++){
+      tempJSONUs[`${i}`] = this.userStorage[i];
+    }
+
+    fs.writeFile('people.db', JSON.stringify(tempJSONPeople));
+    fs.writeFile('us.db', JSON.stringify(tempJSONUs));
+  }
+
   getUserState(msg) {
     if(this.userStorage.length > 0) {
-      if(this.findStorageByTgId(msg.from.id) >= 0) {
+      if(this.findStorageByTgId(msg.from.id) !== '') {
         return this.userStorage[this.findStorageByTgId(msg.from.id)].state;
       } else {
         return false;
@@ -45,6 +84,7 @@ class Coffee {
 
   addUser(user) {
     this.userStorage.push(user);
+    this.writeToDB();
     console.log(this.userStorage);
   }
 
@@ -60,11 +100,13 @@ class Coffee {
 
   addPeople(people) {
     this.people.push(people);
+    this.writeToDB();
     console.log(this.people);
   }
 
   purgeLocation(id) {
     this.people.splice(id, 1);
+    this.writeToDB();
   }
 
   getPeople(id) {
@@ -72,7 +114,7 @@ class Coffee {
   }
 
   findStorageByTgId(tg) {
-    let storageId = 0;
+    let storageId = '';
     for(let i = 0; i < this.userStorage.length; i++){
         if(this.userStorage[i].tgId == tg){
           storageId = i;
@@ -87,88 +129,114 @@ class Coffee {
   setUserLocation(tg, loc) {
     this.userStorage[this.findStorageByTgId(tg)].location = loc;
   }
+
+  authUser(tg, code) {
+    console.log(`storageId: ${this.findStorageByTgId(tg)}`);
+    if(this.findStorageByTgId(tg) !== '') {
+      console.log(`Правильный код ${this.userStorage[this.findStorageByTgId(tg)].id}`);
+      if(this.userStorage[this.findStorageByTgId(tg)].id == code){
+        this.userStorage[this.findStorageByTgId(tg)].state = 1;
+        this.writeToDB();
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
 }
 
 let coffee = new Coffee();
+coffee.readFromDB();
 
 bot.on('message', function (msg) {
-    //state 0 = Регистрация
-    //state 1 = Поиск пары
-    //state 2 = В очереди
-    //state 3 = Пьет
-    let state = 0;
-    let checkState = coffee.getUserState(msg);
-    checkState ? state = checkState : state = 0;
+    if(msg.text == 'SecretRebootMessage'){
+      notExistedFunction();
+    } else {
+      //state 0 = Регистрация
+      //state 1 = Поиск пары
+      //state 2 = В очереди
+      //state 3 = Пьет
+      let state = 0;
+      let checkState = coffee.getUserState(msg);
+      checkState ? state = checkState : state = 0;
 
-    switch(state){
-      case 1:
-        inSearch(msg);
-        break;
-      case 2:
-        findPeople(msg);
-        break;
-      case 3:
-        inQuery(msg);
-        break;
-      default:
-        registerUser(msg);
-        break;
+      switch(state){
+        case 1:
+          inSearch(msg);
+          break;
+        case 2:
+          findPeople(msg);
+          break;
+        case 3:
+          inQuery(msg);
+          break;
+        default:
+          registerUser(msg);
+          break;
+      }
     }
-
 });
 
-//let people = [];
-
 function registerUser(msg) {
-  let fromId = msg.from.id;
-  //Если прислали почту и она содержит @open.ru, то посылаем сгенерированный код пользователя
+  //TODO: Если пользователь уже регистрировался, но указывает другую почту, то удаляем старую запись
   if(msg.text.indexOf('@open.ru') != -1) {
-    function generateId() {
-        let tempId = '';
-        for(let i = 0; i < 6; i++) {
-          tempId += Math.floor(Math.random() * 9);
+    if(coffee.findStorageByTgId(msg.from.id) !== '') {
+      bot.sendMessage(msg.from.id, `Ты уже регистрировался с почтой ${coffee.getUserByTgId(msg.from.id).mail}. Отправь мне код, чтобы я тебя авторизовал.`);
+    } else {
+      let id = generateId();
+
+      coffee.addUser({
+        id: id,
+        mail: msg.text,
+        tgId: msg.from.id,
+        state: 0,
+        isAdmin: 0
+      });
+
+      sendCode(msg.text, id);
+      bot.sendMessage(msg.from.id, `Письмо с кодом отправлено на почту ${msg.text}. Отправь мне код, чтобы я тебя авторизовал.`);
+      }
+    } else if(msg.text.match('[0-9][0-9][0-9][0-9][0-9][0-9]')){
+        if(coffee.authUser(msg.from.id, msg.text)){
+          bot.sendMessage(msg.from.id, `Ты прислал правильный код! Отправь мне любое сообщение, чтобы продолжить`);
+        } else {
+          bot.sendMessage(msg.from.id, `Код неверный :( Попробуй еще раз`);
         }
-        return tempId;
-    }
+    } else {
+       bot.sendMessage(msg.from.id, `Привет, ${msg.from.first_name}, я кофебот!	Давайте зарегистрируемся? Введите, пожалуйста, свою рабочую почту в домене @open.ru или код из письма для авторизации`);
+     }
 
-    let id = generateId();
+  function generateId() {
+      let tempId = '';
+      for(let i = 0; i < 6; i++) {
+        tempId += Math.floor(Math.random() * 9);
+      }
+      return tempId;
+  }
 
-    coffee.addUser({
-      id: id,
-      mail: msg.text,
-      tgId: fromId,
-      state: 1,
-      isAdmin: 0
+  function sendCode(mail, code) {
+
+    let transporter = nodemailer.createTransport({
+        host: process.env.MAIL_HOST,
+        port: process.env.MAIL_PORT,
+        secure: true, //Если порт 465, то true
+        auth: {
+            user: process.env.MAIL_USER,
+            pass: process.env.MAIL_PASS
+        }
     });
 
-    bot.sendMessage(fromId, 'Успешно зарегистрировал тебя! Напишите мне что-нибудь, чтобы начать поиск сочашечника.');
+    let message = {
+      from: `Coffeebot <${process.env.MAIL_USER}>`,
+      to: mail,
+      subject: 'Код авторизации для кофебота',
+      text: `Привет! Твой код ${code}. Отправь его кофеботу для авторизации`
+    };
 
-  }
-   else {
-      bot.sendMessage(fromId, `Привет, ${msg.from.first_name}, я кофебот!	Давайте зарегистрируемся? Введите, пожалуйста, свою рабочую почту в домене @open.ru или код из письма для авторизации`);
-  }
-  function sendCode(mail, code) {
-    const nodemailer = require('nodemailer');
-
-    function main() {
-        let transporter = nodemailer.createTransport({
-            sendmail: true,
-            newline: 'windows',
-            logger: false
-        });
-
-        let message = {
-            from: 'Coffeebot <bot@coffee.hostling.ru>',
-            to: mail,
-            subject: 'Код авторизации для кофебота',
-            text: `Привет! Твой код ${code}. Отправь его кофеботу для авторизации`
-        };
-
-        let info = transporter.sendMail(message);
-        console.log('Message sent successfully');
-    }
-
-    main();
+    let info = transporter.sendMail(message);
+    console.log('Message sent successfully %s', info.messageId);
   }
 }
 
@@ -231,6 +299,7 @@ bot.on('callback_query', function (msg) {
       bot.sendMessage(msg.from.id, `В какой локации искать сочашечника?`, options);
       break
     case 'no':
+      avwe();
       bot.sendMessage(msg.from.id, 'Жаль. Ты можешь написать мне в любое время, когда захочешь кофе.');
       break;
     case 'mos_1':
