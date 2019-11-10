@@ -1,3 +1,4 @@
+"use strict";
 require('dotenv').config();
 let TelegramBot = require('node-telegram-bot-api');
 
@@ -6,8 +7,6 @@ let TelegramBot = require('node-telegram-bot-api');
 https://hidemy.name/ru/proxy-list/
 let bot = new TelegramBot(token, { polling: true, request: { proxy: 'http://177.22.225.237:3128', } });
 */
-
-let tempNoSqlStorage = [];
 
 const TOKEN = process.env.TG_TOKEN;
 
@@ -27,6 +26,70 @@ bot.setWebHook(`${url}/bot${TOKEN}`, {
   certificate: `@${options.webHook.cert}`,
 });
 
+class Coffee {
+  constructor() {
+    this.people = [];
+    this.userStorage = [];
+  }
+  getUserState(msg) {
+    if(this.userStorage.length > 0) {
+      if(this.findStorageByTgId(msg.from.id) >= 0) {
+        return this.userStorage[this.findStorageByTgId(msg.from.id)].state;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+
+  addUser(user) {
+    this.userStorage.push(user);
+    console.log(this.userStorage);
+  }
+
+  getPeopleFromLocation(loc) {
+    let match = undefined;
+    for(let i = 0; i < this.people.length; i++){
+        if(this.people[i].location == loc){
+          match = i;
+        }
+    }
+    return match;
+  }
+
+  addPeople(people) {
+    this.people.push(people);
+    console.log(this.people);
+  }
+
+  purgeLocation(id) {
+    this.people.splice(id, 1);
+  }
+
+  getPeople(id) {
+    return this.people[id];
+  }
+
+  findStorageByTgId(tg) {
+    let storageId = 0;
+    for(let i = 0; i < this.userStorage.length; i++){
+        if(this.userStorage[i].tgId == tg){
+          storageId = i;
+        }
+    }
+    return storageId;
+  }
+
+  getUserByTgId(tg) {
+    return this.userStorage[this.findStorageByTgId(tg)];
+  }
+  setUserLocation(tg, loc) {
+    this.userStorage[this.findStorageByTgId(tg)].location = loc;
+  }
+}
+
+let coffee = new Coffee();
 
 bot.on('message', function (msg) {
     //state 0 = Регистрация
@@ -34,18 +97,8 @@ bot.on('message', function (msg) {
     //state 2 = В очереди
     //state 3 = Пьет
     let state = 0;
-    if(tempNoSqlStorage.length > 0){
-      let storageId = -1;
-      for(let i = 0; i < tempNoSqlStorage.length; i++){
-          console.log(storageId);
-          if(tempNoSqlStorage[i].tgId == msg.from.id){
-            storageId = i;
-          }
-      }
-      if(storageId != -1){
-          state = tempNoSqlStorage[storageId].state;
-      }
-    }
+    let checkState = coffee.getUserState(msg);
+    checkState ? state = checkState : state = 0;
 
     switch(state){
       case 1:
@@ -64,14 +117,14 @@ bot.on('message', function (msg) {
 
 });
 
-let people = [];
+//let people = [];
 
 function registerUser(msg) {
   let fromId = msg.from.id;
   //Если прислали почту и она содержит @open.ru, то посылаем сгенерированный код пользователя
   if(msg.text.indexOf('@open.ru') != -1) {
     function generateId() {
-        let tempId = 0;
+        let tempId = '';
         for(let i = 0; i < 6; i++) {
           tempId += Math.floor(Math.random() * 9);
         }
@@ -80,7 +133,7 @@ function registerUser(msg) {
 
     let id = generateId();
 
-    tempNoSqlStorage.push({
+    coffee.addUser({
       id: id,
       mail: msg.text,
       tgId: fromId,
@@ -88,7 +141,7 @@ function registerUser(msg) {
       isAdmin: 0
     });
 
-    bot.sendMessage(fromId, 'Вы успешно зарегистрировались! Напишите мне что-нибудь, чтобы начать поиск сочашечника.');
+    bot.sendMessage(fromId, 'Успешно зарегистрировал тебя! Напишите мне что-нибудь, чтобы начать поиск сочашечника.');
 
   }
    else {
@@ -120,29 +173,24 @@ function registerUser(msg) {
 }
 
 function findPeople(msg, loc) {
-  let findId = -1;
-  for(let i = 0; i < people.length; i++){
-      if(people[i].location == loc){
-        findId = i;
-      }
-  }
-
+  let findId = '';
+  let checkFindId = coffee.getPeopleFromLocation(loc);
+  checkFindId == undefined ? findId = -1 : findId = checkFindId;
 	if(findId == -1) {
 		bot.sendMessage(msg.from.id, 'Пока в очереди только ты...Как только кто-то захочет выпить - я обязательно тебе напишу!');
-		people.push({
+    coffee.addPeople({
 			id: msg.from.id,
 			user: msg.from.username,
       location: loc
 		});
 	} else {
-		bot.sendMessage(msg.from.id, `${people[findId].user} тоже хочет кофе! Найди его по ссылке t.me/${people[findId].user} Сейчас я его тоже приглашу к тебе!`);
-		bot.sendMessage(people[0].id, `${msg.from.first_name} хочет попить с тобой кофе! Найди его по ссылке t.me/${msg.from.username}`);
-		people.pop();
+		bot.sendMessage(msg.from.id, `${coffee.getPeople(findId).user} тоже хочет кофе! Найди его по ссылке t.me/${coffee.getPeople(findId).user} Сейчас я его тоже приглашу к тебе!`);
+		bot.sendMessage(coffee.getPeople(findId).id, `${msg.from.first_name} хочет попить с тобой кофе! Найди его по ссылке t.me/${msg.from.username}`);
+		coffee.purgeLocation(findId);
 	}
 }
 
 function inSearch(msg){
-  let fromId = msg.from.id;
   let options = {
     reply_markup: JSON.stringify({
       inline_keyboard: [
@@ -151,7 +199,7 @@ function inSearch(msg){
       ]
     })
   };
-  bot.sendMessage(fromId, `Привет, ${msg.from.first_name}, я кофебот!	Найти тебе сочашечника?`, options);
+  bot.sendMessage(msg.from.id, `Привет, ${msg.from.first_name}, я кофебот!	Найти тебе сочашечника?`, options);
 }
 
 function inQuery(msg) {
@@ -162,7 +210,6 @@ function inQuery(msg) {
 bot.on('callback_query', function (msg) {
   switch(msg.data) {
     case 'yes_0':
-      let fromId = msg.from.id;
       let options = {
         reply_markup: JSON.stringify({
           inline_keyboard: [
@@ -181,10 +228,10 @@ bot.on('callback_query', function (msg) {
           ]
         })
       };
-      bot.sendMessage(fromId, `В какой локации искать сочашечника?`, options);
+      bot.sendMessage(msg.from.id, `В какой локации искать сочашечника?`, options);
       break
     case 'no':
-      bot.sendMessage(msg.from.id, 'Жаль. Ты можешь отправить мне /start в любое время, когда захочешь кофе.');
+      bot.sendMessage(msg.from.id, 'Жаль. Ты можешь написать мне в любое время, когда захочешь кофе.');
       break;
     case 'mos_1':
       goToLocation(msg, 'mos_1');
@@ -223,26 +270,13 @@ bot.on('callback_query', function (msg) {
       goToLocation(msg, 'hant_1');
       break;
     case 'now':
-      let storageId = 0;
-      for(let i = 0; i < tempNoSqlStorage.length; i++){
-          if(tempNoSqlStorage[i].tgId == msg.from.id){
-            storageId = i;
-          }
-      }
-      findPeople(msg, tempNoSqlStorage[storageId].location);
+      let loc = coffee.getUserByTgId(msg.from.id);
+      findPeople(msg, loc.location);
       break;
 
 
     function goToLocation(msg, location) {
-      let storageId = 0;
-      for(let i = 0; i < tempNoSqlStorage.length; i++){
-          if(tempNoSqlStorage[i].tgId == msg.from.id){
-            storageId = i;
-          }
-      }
-      tempNoSqlStorage[storageId].location = location;
-      console.log(tempNoSqlStorage);
-      let fromId = msg.from.id;
+      coffee.setUserLocation(msg.from.id, location);
       let options = {
         reply_markup: JSON.stringify({
           inline_keyboard: [
@@ -251,7 +285,7 @@ bot.on('callback_query', function (msg) {
           ]
         })
       };
-      bot.sendMessage(fromId, `Готов прямо сейчас или есть пожелания?`, options);
+      bot.sendMessage(msg.from.id, `Готов прямо сейчас или есть пожелания?`, options);
     }
 
   }
