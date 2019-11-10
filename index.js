@@ -299,7 +299,6 @@ bot.on('callback_query', function (msg) {
       bot.sendMessage(msg.from.id, `В какой локации искать сочашечника?`, options);
       break
     case 'no':
-      avwe();
       bot.sendMessage(msg.from.id, 'Жаль. Ты можешь написать мне в любое время, когда захочешь кофе.');
       break;
     case 'mos_1':
