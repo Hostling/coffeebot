@@ -1,5 +1,10 @@
-let resultDiv = document.getElementById('result');
 let formsDiv = document.getElementById('forms');
+let addResult = (text) => {
+  let nowDate = new Date();
+  let editTime = (whole) => whole < 10 ? `0${whole}` : whole;
+  let now = `<p><span class="message_time">${editTime(nowDate.getHours())}:${editTime(nowDate.getMinutes())}</span>`;
+  document.getElementById('result').innerHTML += now + text + '</p>';
+};
 
 let socket = io();
 
@@ -11,7 +16,7 @@ if(localStorage.getItem('token')) {
   });
   socket.emit('auth', localStorage.getItem('token'));
 } else {
-  resultDiv.innerHTML += `<p>Привет, я кофебот. Зарегистрируйся в <a href="https://t.me/@OpenCoffee_bot">телеграме</a> и пришли мне код из письма, чтобы начать общение.</p>`;
+  addResult(`Привет, я кофебот. Зарегистрируйся в <a href="https://t.me/@OpenCoffee_bot">телеграме</a> и пришли мне код из письма, чтобы начать общение.`);
   formsDiv.innerHTML = `
     <input class="secret_code" name="secret_code" type="text">
     <button class="submit_code">Отправить</button>
@@ -32,9 +37,7 @@ socket.on('successAuth', (msg) => {
       token: msg
     }
   });
-  resultDiv.innerHTML += `
-    <p>Ты авторизовался удачно и теперь можешь я могу помочь тебе найти пару для чашечки кофе!</p>
-  `;
+  addResult(`Ты авторизовался удачно и теперь можешь я могу помочь тебе найти пару для чашечки кофе!`);
   formsDiv.innerHTML = `
     <button class="find_coffee">Найти сочашечника</button>
   `;
@@ -71,7 +74,7 @@ socket.on('successAuth', (msg) => {
 });
 
 socket.on('failedAuth', (msg) => {
-  resultDiv.innerHTML += `<p>Не смог тебя авторизовать :( Пришли мне код из письма еще раз.</p>`;
+  addResult(`Не смог тебя авторизовать :( Пришли мне код из письма еще раз.`);
   formsDiv.innerHTML = `
     <input class="secret_code" name="secret_code" type="text">
     <button class="submit_code">Отправить</button>
@@ -79,9 +82,7 @@ socket.on('failedAuth', (msg) => {
 });
 
 socket.on('message', (msg) => {
-  resultDiv.innerHTML += `
-  <p>${msg}</p>
-  `;
+  addResult(msg);
 });
 
 /*

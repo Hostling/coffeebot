@@ -32,7 +32,6 @@ main::after {
   z-index: 1;
 }
 #result {
-   width: 900px;
    height: 200px;
    border: #fff 2px solid;
 }
@@ -57,4 +56,9 @@ main::after {
   border-radius: 10px;
   border: 1px #000;
   font-size: 21px;
+}
+
+.message_time {
+  color: green;
+  padding-right: 10px;
 }
