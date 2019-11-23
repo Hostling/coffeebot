@@ -1,4 +1,4 @@
-/.env
-/people.db
-/us.db
+.env
+people.db
+us.db
 node_modules
