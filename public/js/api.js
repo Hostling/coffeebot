@@ -60,8 +60,11 @@ socket.on('successAuth', (msg) => {
       </form>
     `;
     document.querySelector('.submit_location').addEventListener('click', (e) => {
-      let opt = document.forms[0].elements["location"].options;
-      let selected = opt[opt.selectedIndex];
+      e.preventDefault();
+      const opt = document.forms[0].elements.location.options;
+      const selected = opt[opt.selectedIndex].value;
+      console.log(opt);
+      console.log(selected);
       socket.emit('find_coffee', selected);
     });
   });
@@ -94,7 +97,10 @@ socket.on('finded', (msg) => {
   `;
   document.querySelector('.send_message').addEventListener('click', (e) => {
     e.preventDefault();
-    socket.emit('drink', document.querySelector('.drink_message').value);
+    socket.emit('drink', {
+      id: localStorage.getItem('token'),
+      text: document.querySelector('.drink_message').value,
+    });
   });
 
 });
