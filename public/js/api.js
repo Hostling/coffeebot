@@ -1,22 +1,22 @@
-let formsDiv = document.getElementById('forms');
-let addResult = (text) => {
-  let nowDate = new Date();
-  let editTime = (whole) => whole < 10 ? `0${whole}` : whole;
-  let now = `<p><span class="message_time">${editTime(nowDate.getHours())}:${editTime(nowDate.getMinutes())}</span>`;
-  document.getElementById('result').innerHTML += now + text + '</p>';
+const formsDiv = document.getElementById('forms');
+const addResult = (text) => {
+  const nowDate = new Date();
+  const editTime = (whole) => whole < 10 ? `0${whole}` : whole;
+  const now = `<p><span class="message_time">${editTime(nowDate.getHours())}:${editTime(nowDate.getMinutes())}</span>`;
+  document.getElementById('result').innerHTML += `${now + text}</p>`;
 };
 
 let socket = io();
 
-if(localStorage.getItem('token')) {
+if (localStorage.getItem('token')) {
   socket = io({
     query: {
-      token: localStorage.getItem('token')
-    }
+      token: localStorage.getItem('token'),
+    },
   });
   socket.emit('auth', localStorage.getItem('token'));
 } else {
-  addResult(`Привет, я кофебот. Зарегистрируйся в <a href="https://t.me/@OpenCoffee_bot">телеграме</a> и пришли мне код из письма, чтобы начать общение.`);
+  addResult('Привет, я кофебот. Зарегистрируйся в <a href="https://t.me/@OpenCoffee_bot">телеграме</a> и пришли мне код из письма, чтобы начать общение.');
   formsDiv.innerHTML = `
     <input class="secret_code" name="secret_code" type="text">
     <button class="submit_code">Отправить</button>
@@ -68,11 +68,10 @@ socket.on('successAuth', (msg) => {
       socket.emit('find_coffee', selected);
     });
   });
-
 });
 
 socket.on('failedAuth', (msg) => {
-  addResult(`Не смог тебя авторизовать :( Пришли мне код из письма еще раз.`);
+  addResult('Не смог тебя авторизовать :( Пришли мне код из письма еще раз.');
   formsDiv.innerHTML = `
     <input class="secret_code" name="secret_code" type="text">
     <button class="submit_code">Отправить</button>
@@ -88,7 +87,7 @@ socket.on('message', (msg) => {
 });
 
 socket.on('finded', (msg) => {
-  //Нашлась пара. Отображаем кнопки "Выйти" и "Я тут". Сообщения прокидываем через 'drink'
+  // Нашлась пара. Отображаем кнопки "Выйти" и "Я тут". Сообщения прокидываем через 'drink'
   formsDiv.innerHTML = `
   <input class="drink_message" name="drink_message" type="text">
   <button class="send_message">Отправить cообщение</button>
@@ -102,7 +101,6 @@ socket.on('finded', (msg) => {
       text: document.querySelector('.drink_message').value,
     });
   });
-
 });
 /*
 let tgId = document.querySelector('.tgId');
