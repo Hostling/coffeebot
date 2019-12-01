@@ -24,7 +24,6 @@ if(localStorage.getItem('token')) {
   document.querySelector('.submit_code').addEventListener('click', (e) => {
     e.preventDefault();
     socket.emit('auth', document.querySelector('.secret_code').value);
-    //console.log(code.value);
   });
 }
 
@@ -32,19 +31,15 @@ if(localStorage.getItem('token')) {
 
 socket.on('successAuth', (msg) => {
   localStorage.setItem('token', msg);
-  const socket = io({
-    query: {
-      token: msg
-    }
-  });
+  socket.query.token = msg;
+  console.log(socket);
+
   addResult(`Ты авторизовался удачно и теперь можешь я могу помочь тебе найти пару для чашечки кофе!`);
   formsDiv.innerHTML = `
     <button class="find_coffee">Найти сочашечника</button>
   `;
   document.querySelector('.find_coffee').addEventListener('click', (e) => {
-    resultDiv.innerHTML += `
-      <p>Теперь выбери свою локацию из списка</p>
-    `;
+    addResult('Теперь выбери свою локацию из списка');
     formsDiv.innerHTML = `
       <form>
         <select name="location">
@@ -79,12 +74,30 @@ socket.on('failedAuth', (msg) => {
     <input class="secret_code" name="secret_code" type="text">
     <button class="submit_code">Отправить</button>
   `;
+  document.querySelector('.submit_code').addEventListener('click', (e) => {
+    e.preventDefault();
+    socket.emit('auth', document.querySelector('.secret_code').value);
+  });
 });
 
 socket.on('message', (msg) => {
   addResult(msg);
 });
 
+socket.on('finded', (msg) => {
+  //Нашлась пара. Отображаем кнопки "Выйти" и "Я тут". Сообщения прокидываем через 'drink'
+  formsDiv.innerHTML = `
+  <input class="drink_message" name="drink_message" type="text">
+  <button class="send_message">Отправить cообщение</button>
+  <button class="iam_here">Я уже тут</button>
+  <button class="quit">Выйти из беседы</button>
+  `;
+  document.querySelector('.send_message').addEventListener('click', (e) => {
+    e.preventDefault();
+    socket.emit('drink', document.querySelector('.drink_message').value);
+  });
+
+});
 /*
 let tgId = document.querySelector('.tgId');
 let tgMessage = document.querySelector('.tgMessage');

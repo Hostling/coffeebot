@@ -19,11 +19,19 @@ app.use(express.static('public'), express.static('public/images'), express.stati
 
 io.on('connection', (socket) => {
   coffee.addSocket(socket);
-  //console.log(socket.handshake);
   /*
-  socket.on('disconnect', () => {
-    console.log(socket.handshake);
-  });
+  state 0 = Регистрация.
+    Только TG.
+  state 1 = Зарегистрирован. Авторизован(Web). Выбор локации.
+    Только TG.
+  state 2 = Стоит в очереди.
+    TG: заглушка "Ты уже в очереди" и кнопка "выйти"
+    Web: кнопка "Выйти из очереди"
+  state 3 = Разговаривают
+    Длительность 30 минут, либо до выхода одного из очереди.
+    Перенаправление сообщений через кофебота
+    TG: кнопка "я тут", кнопка "Выйти"
+    Web: кнопка "я тут", кнопка "Выйти"
   */
   socket.on('chat', (msg) => {
     console.log(msg);
@@ -45,7 +53,7 @@ io.on('connection', (socket) => {
     bot.sendMessage(msg.id, msg.message);
   });
 
-  socket.on('findCoffee', (msg) => {
+  socket.on('find_coffee', (msg) => {
     //Ждем от пользователя локацию и ставим в очередь, либо соединяем
     let findId = '';
     let checkFindId = coffee.getPeopleFromLocation(msg);
@@ -53,28 +61,40 @@ io.on('connection', (socket) => {
     if(findId == -1) {
     	socket.emit('message', 'Пока в очереди только ты...Как только кто-то захочет выпить - я обязательно тебе напишу!');
       coffee.addPeople({
-    		id: socket.query.token,
+    		id: socket.handshake.query.token,
     		user: 'WebUser',
-        location: msg
+        location: msg,
+        socket: socket
     	});
     } else {
-    	socket.emit('message', `${coffee.getPeople(findId).user} тоже хочет кофе! Найди его по <a href="https://t.me/${coffee.getPeople(findId).user}">ссылке</a> Сейчас я его тоже приглашу к тебе!`);
-    	bot.sendMessage(coffee.getPeople(findId).id, 'Коллега с веб версии бота хочет попить с тобой кофе!');
+      socket.emit('message', `Кто-то с твоей локации тоже захотел кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!`);
+      pair.socket.emit('finded', 'true');
+      let pair = coffee.getPeople(findId);
+      if(pair.socket) {
+        //Пара из Web
+        pair.socket.emit('message', `Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!`);
+        pair.socket.emit('finded', 'true');
+        coffee.pair({socket: socket},{socket: pair.socket});
+        //Спариваем на полчаса
+        setTimeout(coffee.unpair({socket: socket},{socket: pair.socket}), 30000 * 60);
+      } else {
+        //Пара из TG
+        bot.sendMessage(pair.id, 'Коллега с веб версии бота хочет попить с тобой кофе!');
+        coffee.pair({socket: socket},{tgId: pair.id});
+        //Спариваем на полчаса
+        setTimeout(coffee.unpair({socket: socket},{tgId: pair.id}), 30000 * 60);
+      }
+    	//Ставим им обоим state = 3 на 30 минут и отрисовываем кнопки "выйти" и "я тут"
+
     	coffee.purgeLocation(findId);
     }
   });
 
+  socket.on('drink', (msg) => {
+    coffee.drink(msg.id, msg.text);
+  });
 
 });
-//let send = () => socket.emit('message', coffee.getSockets());
-
-//setInterval(send, 2000);
-
-/*
-app.get('/', function (req, res) {
-  res.send(``);
-});
-*/
 /*
 Если нет хостинга с ssl сертификатом, то можно включить polling, но тогда понадобится прокси
 https://hidemy.name/ru/proxy-list/
@@ -106,6 +126,34 @@ class Coffee {
     this.people = [];
     this.userStorage = [];
     this.sockets = [];
+  }
+
+  drink(id, msg) {
+    let sender = getUserById(id);
+    if(sender.pair.tgId) {
+      //Если у получателя TG
+      bot.sendMessage(sender.pair.tgId, msg);
+    } else {
+      let socket = sender.pair.socket;
+      socket.emit('message', msg);
+    }
+  }
+
+  pair(one, two) {
+    let first = this.userStorage[this.findStorageByTgId(one.tgId)];
+    let second = this.userStorage[this.findStorageByTgId(two.tgId)];
+    first.state = 3;
+    second.state = 3;
+    one.socket ? second.pair.socket = one.socket : second.pair.tgId = one.tgId;
+    two.socket ? first.pair.socket = two.socket : first.pair.tgId = two.tgId;
+  }
+  unpair(one, two) {
+    let first = this.userStorage[this.findStorageByTgId(one.tgId)];
+    let second = this.userStorage[this.findStorageByTgId(two.tgId)];
+    first.state = 1;
+    second.state = 1;
+    first.pair = null;
+    second.pair = null;
   }
 
   addSocket(socket) {
@@ -340,16 +388,26 @@ function inQuery(msg) {
   //TODO
 }
 
-//Проверяем ответы
+//Проверяем ответы из телеграма
 bot.on('message', function (msg) {
     if(msg.from.id == 214301633 || msg.from.id == 266462121 || msg.from.id == 235937232 || msg.from.id == 143687638) {
       if(msg.text == 'SecretRebootMessage'){
         notExistedFunction();
       } else {
-        //state 0 = Регистрация
-        //state 1 = Поиск пары
-        //state 2 = В очереди
-        //state 3 = Пьет
+        /*
+        state 0 = Регистрация.
+          Только TG.
+        state 1 = Зарегистрирован. Авторизован(Web). Выбор локации.
+          Только TG.
+        state 2 = Стоит в очереди.
+          TG: заглушка "Ты уже в очереди" и кнопка "выйти"
+          Web: кнопка "Выйти из очереди"
+        state 3 = Разговаривают
+          Длительность 30 секунд, либо до выхода одного из очереди.
+          Перенаправление сообщений через кофебота
+          TG: кнопка "я тут", кнопка "Выйти"
+          Web: кнопка "я тут", кнопка "Выйти"
+        */
         let state = 0;
         let checkState = coffee.getUserState(msg);
         checkState ? state = checkState : state = 0;
