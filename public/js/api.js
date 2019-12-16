@@ -32,9 +32,8 @@ if (localStorage.getItem('token')) {
 socket.on('successAuth', (msg) => {
   localStorage.setItem('token', msg);
   socket.query.token = msg;
-  console.log(socket);
 
-  addResult(`Ты авторизовался удачно и теперь можешь я могу помочь тебе найти пару для чашечки кофе!`);
+  addResult('Ты авторизовался удачно и теперь можешь я могу помочь тебе найти пару для чашечки кофе!');
   formsDiv.innerHTML = `
     <button class="find_coffee">Найти сочашечника</button>
   `;

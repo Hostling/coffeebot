@@ -1,4 +1,5 @@
 const fs = require('fs');
+const bot = require('./index');
 
 class Coffee {
   constructor() {
@@ -14,7 +15,7 @@ class Coffee {
       socket.emit('message', msg);
     } else {
       // Если у получателя TG
-      // bot.sendMessage(sender.pair.tgId, msg);
+      bot.sendMessage(sender.pair.tgId, msg);
     }
   }
 
