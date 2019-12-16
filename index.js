@@ -290,7 +290,7 @@ function findPeople(msg, loc) {
     // Получаем информацию о себе
     const first = coffee.getUserByTgId(msg.from.id);
 
-    if (first.id === pair.id) {
+    if (msg.from.id === pair.id) {
       bot.sendMessage(msg.from.id, 'В очереди все еще только ты..');
     } else {
       if (pair.socket) {

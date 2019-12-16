@@ -43,12 +43,17 @@ class Coffee {
   }
 
   unpair(one, two) {
-    const first = this.userStorage[this.findStorageByTgId(one.tgId)];
-    const second = this.userStorage[this.findStorageByTgId(two.tgId)];
-    first.state = 1;
-    second.state = 1;
-    first.pair = null;
-    second.pair = null;
+    try {
+      const first = this.userStorage[this.findStorageByTgId(one.tgId)];
+      const second = this.userStorage[this.findStorageByTgId(two.tgId)];
+      first.state = 1;
+      second.state = 1;
+      first.pair = null;
+      second.pair = null;
+      console.log('Пара расформирована');
+    } catch (e) {
+      console.error(`Ошибка при расформировании пары: ${e.stack}`);
+    }
   }
 
   addSocket(socket) {
