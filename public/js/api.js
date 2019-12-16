@@ -3,7 +3,9 @@ const addResult = (text) => {
   const nowDate = new Date();
   const editTime = (whole) => whole < 10 ? `0${whole}` : whole;
   const now = `<p><span class="message_time">${editTime(nowDate.getHours())}:${editTime(nowDate.getMinutes())}</span>`;
-  document.getElementById('result').innerHTML += `${now + text}</p>`;
+  const chatWindow = document.getElementById('result');
+  chatWindow.innerHTML += `${now + text}</p>`;
+  chatWindow.scrollTop = chatWindow.scrollHeight;
 };
 
 let socket = io();
@@ -28,7 +30,6 @@ if (localStorage.getItem('token')) {
 }
 
 
-
 socket.on('successAuth', (msg) => {
   localStorage.setItem('token', msg);
   socket.query.token = msg;
@@ -37,7 +38,7 @@ socket.on('successAuth', (msg) => {
   formsDiv.innerHTML = `
     <button class="find_coffee">Найти сочашечника</button>
   `;
-  document.querySelector('.find_coffee').addEventListener('click', (e) => {
+  document.querySelector('.find_coffee').addEventListener('click', () => {
     addResult('Теперь выбери свою локацию из списка');
     formsDiv.innerHTML = `
       <form>
@@ -62,8 +63,6 @@ socket.on('successAuth', (msg) => {
       e.preventDefault();
       const opt = document.forms[0].elements.location.options;
       const selected = opt[opt.selectedIndex].value;
-      console.log(opt);
-      console.log(selected);
       socket.emit('find_coffee', selected);
     });
   });
@@ -82,7 +81,7 @@ socket.on('failedAuth', (msg) => {
 });
 
 socket.on('message', (msg) => {
-  addResult(msg);
+  addResult(`<span class='message__bot'>Бот: ${msg}</span>`);
 });
 
 socket.on('finded', (msg) => {
@@ -95,10 +94,17 @@ socket.on('finded', (msg) => {
   `;
   document.querySelector('.send_message').addEventListener('click', (e) => {
     e.preventDefault();
-    socket.emit('drink', {
-      id: localStorage.getItem('token'),
-      text: document.querySelector('.drink_message').value,
-    });
+    const messageText = document.querySelector('.drink_message').value;
+    if (messageText !== '') {
+      addResult(`<span class='message__you'>Ты: ${messageText}</span`);
+      socket.emit('drink', {
+        id: localStorage.getItem('token'),
+        text: messageText,
+      });
+      document.querySelector('.drink_message').value = '';
+    } else {
+      console.error('Нельзя отправить пустое сообщение');
+    }
   });
 });
 /*

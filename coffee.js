@@ -1,5 +1,4 @@
 const fs = require('fs');
-const bot = require('./index');
 
 class Coffee {
   constructor() {
@@ -9,40 +8,43 @@ class Coffee {
   }
 
   drink(id, msg) {
+    // Тут жуткий костыль. Логика работает только для WEB.
+    // Отправка в TG реализована в index.js
     const sender = this.getUserById(id);
     if (sender.pair.web) {
-      const socket = sender.pair.socket;
+      const { socket } = sender.pair;
       socket.emit('message', msg);
-    } else {
-      // Если у получателя TG
-      bot.sendMessage(sender.pair.tgId, msg);
     }
   }
 
   pair(one, two) {
-    const first = this.userStorage[this.findStorageByTgId(one.tgId)];
-    const second = this.userStorage[this.findStorageByTgId(two.tgId)];
-    first.state = 3;
-    second.state = 3;
-    first.pair = {};
-    second.pair = {};
-    if (one.socket) {
-      second.pair.socket = one.socket;
-      second.pair.web = true;
-    } else {
-      second.pair.tgId = one.tgId;
-    }
-    if (two.socket) {
-      first.pair.socket = two.socket;
-      first.pair.web = true;
-    } else {
-      first.pair.tgId = two.tgId;
+    try {
+      const first = this.userStorage[this.findStorageByTgId(one.tgId)];
+      const second = this.userStorage[this.findStorageByTgId(two.tgId)];
+      first.state = 3;
+      second.state = 3;
+      first.pair = {};
+      second.pair = {};
+      if (one.socket) {
+        second.pair.socket = one.socket;
+        second.pair.web = true;
+      } else {
+        second.pair.tgId = one.tgId;
+      }
+      if (two.socket) {
+        first.pair.socket = two.socket;
+        first.pair.web = true;
+      } else {
+        first.pair.tgId = two.tgId;
+      }
+    } catch (e) {
+      console.error(`Ошибка спаривания ${e.stack}`);
     }
   }
 
   unpair(one, two) {
-    let first = this.userStorage[this.findStorageByTgId(one.tgId)];
-    let second = this.userStorage[this.findStorageByTgId(two.tgId)];
+    const first = this.userStorage[this.findStorageByTgId(one.tgId)];
+    const second = this.userStorage[this.findStorageByTgId(two.tgId)];
     first.state = 1;
     second.state = 1;
     first.pair = null;
@@ -51,9 +53,9 @@ class Coffee {
 
   addSocket(socket) {
     this.sockets.push(socket);
-    //console.log('Массив сокетов' + this.sockets);
-    //console.log('Хендшейк первого:' + this.sockets[0].handshake)
-    //this.sockets[0].emit('message', 'Ты первый');
+    // console.log('Массив сокетов' + this.sockets);
+    // console.log('Хендшейк первого:' + this.sockets[0].handshake)
+    // this.sockets[0].emit('message', 'Ты первый');
   }
 
   getSockets() {
@@ -62,8 +64,8 @@ class Coffee {
 
   tryWebAuth(code, socket) {
     console.log(`Прислан код: ${code}`);
-    let user = this.getUserById(code);
-    if(user != '') {
+    const user = this.getUserById(code);
+    if (user !== '') {
       user.socket = socket;
       return user;
     } else {

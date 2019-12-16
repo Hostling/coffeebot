@@ -69,7 +69,7 @@ io.on('connection', (socket) => {
       bot.sendMessage(msg.id, msg.message);
       console.log(`Отправлено ${msg.message} для ${msg.id}`);
     } catch (e) {
-      console.error(`Ошибка отправки сообщения ${e}`);
+      console.error(`Ошибка отправки сообщения ${e.stack}`);
     }
   });
 
@@ -90,78 +90,87 @@ io.on('connection', (socket) => {
           socket,
         });
       } catch (e) {
-        console.error(`Ошибка добавления пользователя в очередь: ${e}`);
+        console.error(`Ошибка добавления пользователя в очередь: ${e.stack}`);
       }
     } else {
-      // Если человек в очереди есть
-      // Шлем ответное сообщение, что напарник есть
-      /* socket.emit('message', 'Кто-то с твоей локации тоже захотел кофе!
-       Можешь писать прямо сюда и я перешлю ему все твои сообщения!'); */
       // Получаем информацию о напарнике
       const pair = coffee.getPeople(findId);
       // Получаем информацию о себе
       const first = coffee.getUserById(socket.handshake.query.token);
-
-      if (pair.socket) {
-        // Пара из Web
-        const second = coffee.getUserById(pair.id);
-        try {
-          // Шлем напарнику уведомление и отрисовываем кнопки в Web
-          pair.socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
-          pair.socket.emit('finded', 'true');
-        } catch (e) {
-          console.error(`Ошибка отправки сообщения первому пользователю ${e}`);
-        }
-        try {
-          // Шлем себе уведомление и отрисовываем кнопки в Web
-          socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
-          socket.emit('finded', 'true');
-        } catch (e) {
-          console.error(`Ошибка отправки сообщения второму пользователю ${e}`);
-        }
-        coffee.pair(
-          { tgId: first.tgId, socket },
-          { tgId: second.tgId, socket: pair.socket },
-        );
-        // Спариваем на полчаса
-        setTimeout(() => coffee.unpair(
-          { tgId: first.tgId },
-          { tgId: second.tgId },
-        ), 30000 * 60);
+      // Если человек в очереди есть, проверяем, что это не он сам
+      if (first.id === pair.id) {
+        socket.emit('message', 'В очереди все еще только ты..');
       } else {
-        // Пара из TG
-        const second = coffee.getUserByTgId(pair.id);
+        if (pair.socket) {
+          // Пара из Web
+          const second = coffee.getUserById(pair.id);
+          try {
+            // Шлем напарнику уведомление и отрисовываем кнопки в Web
+            pair.socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
+            pair.socket.emit('finded', 'true');
+          } catch (e) {
+            console.error(`Ошибка отправки сообщения первому пользователю ${e.stack}`);
+          }
+          try {
+            // Шлем себе уведомление и отрисовываем кнопки в Web
+            socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
+            socket.emit('finded', 'true');
+          } catch (e) {
+            console.error(`Ошибка отправки сообщения второму пользователю ${e.stack}`);
+          }
+          coffee.pair(
+            { tgId: first.tgId, socket },
+            { tgId: second.tgId, socket: pair.socket },
+          );
+          // Спариваем на полчаса
+          setTimeout(() => coffee.unpair(
+            { tgId: first.tgId },
+            { tgId: second.tgId },
+          ), 30000 * 60);
+        } else {
+          // Пара из TG
+          const second = coffee.getUserByTgId(pair.id);
 
-        try {
-          // Шлем себе и напарнику уведомление
-          socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
-          socket.emit('finded', 'true');
-        } catch (e) {
-          console.error(`Ошибка отправка сообщения первому пользователю ${e}`);
-        }
-        try {
-          bot.sendMessage(pair.id, 'Коллега с веб версии бота хочет попить с тобой кофе!');
-        } catch (e) {
-          console.error(`Ошибка отправки сообщения второму пользователю ${e}`);
-        }
+          try {
+            // Шлем себе и напарнику уведомление
+            socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
+            socket.emit('finded', 'true');
+          } catch (e) {
+            console.error(`Ошибка отправка сообщения первому пользователю ${e.stack}`);
+          }
+          try {
+            bot.sendMessage(pair.id, 'Коллега с веб версии бота хочет попить с тобой кофе!');
+          } catch (e) {
+            console.error(`Ошибка отправки сообщения второму пользователю ${e.stack}`);
+          }
 
-        coffee.pair(
-          { tgId: first.tgId, socket: socket },
-          { tgId: second.tgId },
-        );
-        // Спариваем на полчаса
-        setTimeout(() => coffee.unpair(
-          { tgId: first.tgId },
-          { tgId: second.tgId },
-        ), 30000 * 60);
+          coffee.pair(
+            { tgId: first.tgId, socket: socket },
+            { tgId: second.tgId },
+          );
+          // Спариваем на полчаса
+          setTimeout(() => coffee.unpair(
+            { tgId: first.tgId },
+            { tgId: second.tgId },
+          ), 30000 * 60);
+        }
+        coffee.purgeLocation(findId);
       }
-
-      coffee.purgeLocation(findId);
     }
   });
 
   socket.on('drink', (msg) => {
     coffee.drink(msg.id, msg.text);
+    // Жуткий костыль с реализацией части логики тут
+    // Перенести в класс Coffee при рефакторинге
+    const sender = coffee.getUserById(msg.id);
+    if (!sender.pair.web) {
+      try {
+        bot.sendMessage(sender.pair.tgId, msg.text);
+      } catch (e) {
+        console.error(`Ошибка отправки в TG: ${e.stack}`);
+      }
+    }
   });
 });
 
@@ -255,7 +264,7 @@ function findPeople(msg, loc) {
     try {
       bot.sendMessage(msg.from.id, 'Пока в очереди только ты...Как только кто-то захочет выпить - я обязательно тебе напишу!');
     } catch (e) {
-      console.error(`Ошибка отправки сообщения в TG: ${e}`);
+      console.error(`Ошибка отправки сообщения в TG: ${e.stack}`);
     }
     try {
       coffee.addPeople({
@@ -264,7 +273,7 @@ function findPeople(msg, loc) {
         location: loc,
       });
     } catch (e) {
-      console.error(`Ошибка добавления пользователя в очередь ${e}`);
+      console.error(`Ошибка добавления пользователя в очередь ${e.stack}`);
     }
   } else {
     // TODO: отрисовать кнопки выйти и я тут
@@ -281,38 +290,42 @@ function findPeople(msg, loc) {
     // Получаем информацию о себе
     const first = coffee.getUserByTgId(msg.from.id);
 
-    if (pair.socket) {
-      // Пара из web
-      const second = coffee.getUserById(pair.id);
-      pair.socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
-      pair.socket.emit('finded', 'true');
-      bot.sendMessage(msg.from.id, 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
-      coffee.pair(
-        { tgId: first.tgId },
-        { tgId: second.tgId, socket: pair.socket },
-      );
-      // Спариваем на полчаса
-      setTimeout(() => coffee.unpair(
-        { tgId: first.tgId },
-        { tgId: second.tgId },
-      ), 30000 * 60);
+    if (first.id === pair.id) {
+      bot.sendMessage(msg.from.id, 'В очереди все еще только ты..');
     } else {
-      // Пара из TG
-      const second = coffee.getUserById(pair.id);
-      // Шлем себе и напарнику уведомление
-      bot.sendMessage(pair.id, 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
-      bot.sendMessage(msg.from.id, 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
-      coffee.pair(
-        { tgId: first.tgId },
-        { tgId: second.tgId },
-      );
-      // Спариваем на полчаса
-      setTimeout(() => coffee.unpair(
-        { tgId: first.tgId },
-        { tgId: second.tgId },
-      ), 30000 * 60);
+      if (pair.socket) {
+        // Пара из web
+        const second = coffee.getUserById(pair.id);
+        pair.socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
+        pair.socket.emit('finded', 'true');
+        bot.sendMessage(msg.from.id, 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
+        coffee.pair(
+          { tgId: first.tgId },
+          { tgId: second.tgId, socket: pair.socket },
+        );
+        // Спариваем на полчаса
+        setTimeout(() => coffee.unpair(
+          { tgId: first.tgId },
+          { tgId: second.tgId },
+        ), 30000 * 60);
+      } else {
+        // Пара из TG
+        const second = coffee.getUserByTgId(pair.id);
+        // Шлем себе и напарнику уведомление
+        bot.sendMessage(pair.id, 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
+        bot.sendMessage(msg.from.id, 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
+        coffee.pair(
+          { tgId: first.tgId },
+          { tgId: second.tgId },
+        );
+        // Спариваем на полчаса
+        setTimeout(() => coffee.unpair(
+          { tgId: first.tgId },
+          { tgId: second.tgId },
+        ), 30000 * 60);
+      }
+      coffee.purgeLocation(findId);
     }
-    coffee.purgeLocation(findId);
   }
 }
 
@@ -329,8 +342,17 @@ function inSearch(msg) {
 }
 
 function drink(msg) {
-  const myId = coffee.getUserByTgId(msg.from.id).id;
-  coffee.drink(myId, msg.text);
+  const sender = coffee.getUserByTgId(msg.from.id);
+  coffee.drink(sender.id, msg.text);
+  // Жуткий костыль с реализацией части с отправкой в TG в этом файле
+  // Перенести в класс Coffee при рефакторинге
+  if (!sender.pair.web) {
+    try {
+      bot.sendMessage(sender.pair.tgId, msg.text);
+    } catch (e) {
+      console.error(`Ошибка отправки в TG: ${e.stack}`);
+    }
+  }
 }
 
 // Проверяем ответы из телеграма

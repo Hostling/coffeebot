@@ -34,6 +34,7 @@ main::after {
 #result {
    height: 200px;
    border: #fff 2px solid;
+   overflow-y: auto;
 }
 
 #result p {
@@ -61,4 +62,12 @@ main::after {
 .message_time {
   color: green;
   padding-right: 10px;
+}
+
+.message__bot {
+  color: tan;
+}
+
+.message__you {
+  color: darkgoldenrod;
 }
