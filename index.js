@@ -300,20 +300,29 @@ function findPeople(msg, loc) {
 
   checkFindId === undefined ? findId = -1 : findId = checkFindId;
   if (findId === -1) {
-    // Если никого в очереди нет
-    try {
-      bot.sendMessage(msg.from.id, 'Пока в очереди только ты...Как только кто-то захочет выпить - я обязательно тебе напишу!');
-    } catch (e) {
-      console.error(`Ошибка отправки сообщения в TG: ${e.stack}`);
-    }
-    try {
-      coffee.addPeople({
-        id: msg.from.id,
-        user: msg.from.username,
-        location: loc,
-      });
-    } catch (e) {
-      console.error(`Ошибка добавления пользователя в очередь ${e.stack}`);
+    // Если никого в очереди нет, то проверяем, что человека нет в других очередях
+    const myLocation = coffee.getUserByTgId(msg.from.id).location;
+    let findId2 = '';
+    const checkFindId2 = coffee.getPeopleFromLocation(myLocation);
+    checkFindId2 === undefined ? findId2 = -1 : findId2 = checkFindId2;
+    if (findId2 === -1) {
+      try {
+        bot.sendMessage(msg.from.id, 'Пока в очереди только ты...Как только кто-то захочет выпить - я обязательно тебе напишу!');
+      } catch (e) {
+        console.error(`Ошибка отправки сообщения в TG: ${e.stack}`);
+      }
+      try {
+        coffee.addPeople({
+          id: msg.from.id,
+          user: msg.from.username,
+          location: loc,
+        });
+      } catch (e) {
+        console.error(`Ошибка добавления пользователя в очередь ${e.stack}`);
+      }
+    } else {
+      const finded = coffee.getPeople(findId);
+      if (finded.tgIg === msg.from.id) coffee.purgeLocation(myLocation);
     }
   } else {
     // TODO: отрисовать кнопки выйти и я тут
