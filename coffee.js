@@ -48,8 +48,8 @@ class Coffee {
       const second = this.userStorage[this.findStorageByTgId(two.tgId)];
       first.state = 1;
       second.state = 1;
-      first.pair = null;
-      second.pair = null;
+      delete (first.pair);
+      delete (second.pair);
       console.log('Пара расформирована');
     } catch (e) {
       console.error(`Ошибка при расформировании пары: ${e.stack}`);

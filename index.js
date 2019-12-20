@@ -123,10 +123,16 @@ io.on('connection', (socket) => {
             { tgId: second.tgId, socket: pair.socket },
           );
           // Спариваем на полчаса
-          setTimeout(() => coffee.unpair(
-            { tgId: first.tgId },
-            { tgId: second.tgId },
-          ), 30000 * 60);
+          setTimeout(() => {
+            socket.emit('message', 'Ваша пара расформирована');
+            socket.emit('unpair', '');
+            pair.socket.emit('message', 'Ваша пара расформирована');
+            pair.socket.emit('unpair', '');
+            coffee.unpair(
+              { tgId: first.tgId },
+              { tgId: second.tgId },
+            );
+          }, 30000 * 60);
         } else {
           // Пара из TG
           const second = coffee.getUserByTgId(pair.id);
@@ -145,14 +151,19 @@ io.on('connection', (socket) => {
           }
 
           coffee.pair(
-            { tgId: first.tgId, socket: socket },
+            { tgId: first.tgId, socket },
             { tgId: second.tgId },
           );
           // Спариваем на полчаса
-          setTimeout(() => coffee.unpair(
-            { tgId: first.tgId },
-            { tgId: second.tgId },
-          ), 30000 * 60);
+          setTimeout(() => {
+            socket.emit('message', 'Ваша пара расформирована');
+            socket.emit('unpair', '');
+            bot.sendMessage(pair.id, 'Ваша пара расформирована');
+            coffee.unpair(
+              { tgId: first.tgId },
+              { tgId: second.tgId },
+            );
+          }, 30000 * 60);
         }
         coffee.purgeLocation(findId);
       }
@@ -169,6 +180,25 @@ io.on('connection', (socket) => {
         bot.sendMessage(sender.pair.tgId, msg.text);
       } catch (e) {
         console.error(`Ошибка отправки в TG: ${e.stack}`);
+      }
+    }
+  });
+
+  socket.on('disconnect', () => {
+    const me = coffee.getUserById(socket.handshake.query.token);
+    if (me.pair !== undefined) {
+      try {
+        if (me.pair.socket) {
+          me.pair.socket.emit('message', 'Ваша пара расформирована');
+        } else {
+          bot.sendMessage(me.pair.tgId, 'Ваша пара расформирована');
+        }
+        coffee.unpair(
+          { tgId: me.pair.tgId },
+          { tgId: me.tgId },
+        );
+      } catch (e) {
+        console.error(`Ошибка расформирования пары ${e.stack}`);
       }
     }
   });
@@ -304,10 +334,15 @@ function findPeople(msg, loc) {
           { tgId: second.tgId, socket: pair.socket },
         );
         // Спариваем на полчаса
-        setTimeout(() => coffee.unpair(
-          { tgId: first.tgId },
-          { tgId: second.tgId },
-        ), 30000 * 60);
+        setTimeout(() => {
+          pair.socket.emit('message', 'Ваша пара расформирована');
+          pair.socket.emit('unpair', '');
+          bot.sendMessage(msg.from.id, 'Ваша пара расформирована');
+          coffee.unpair(
+            { tgId: first.tgId },
+            { tgId: second.tgId },
+          );
+        }, 30000 * 60);
       } else {
         // Пара из TG
         const second = coffee.getUserByTgId(pair.id);
@@ -319,10 +354,14 @@ function findPeople(msg, loc) {
           { tgId: second.tgId },
         );
         // Спариваем на полчаса
-        setTimeout(() => coffee.unpair(
-          { tgId: first.tgId },
-          { tgId: second.tgId },
-        ), 30000 * 60);
+        setTimeout(() => {
+          bot.sendMessage(pair.id, 'Ваша пара расформирована');
+          bot.sendMessage(msg.from.id, 'Ваша пара расформирована');
+          coffee.unpair(
+            { tgId: first.tgId },
+            { tgId: second.tgId },
+          );
+        }, 30000 * 60);
       }
       coffee.purgeLocation(findId);
     }

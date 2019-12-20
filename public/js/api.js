@@ -107,6 +107,12 @@ socket.on('finded', (msg) => {
     }
   });
 });
+
+socket.on('unpair', () => {
+  formsDiv.innerHTML = `
+    <button class="find_coffee">Найти сочашечника</button>
+  `;
+});
 /*
 let tgId = document.querySelector('.tgId');
 let tgMessage = document.querySelector('.tgMessage');
