@@ -322,18 +322,15 @@ function findPeople(msg, loc) {
       }
     } else {
       const finded = coffee.getPeople(findId);
-      if (finded.tgIg === msg.from.id) coffee.purgeLocation(myLocation);
+      if (finded.tgIg === msg.from.id) {
+        // coffee.purgeLocation(myLocation);
+        // TODO: добавить отрисовку кнопки выхода
+        bot.sendMessage(msg.from.id, `Ты уже стоишь в очереди в ${myLocation}`);
+      }
     }
   } else {
     // TODO: отрисовать кнопки выйти и я тут
     // Если человек в очереди есть
-    // Шлем ответное сообщение, что напарник есть
-    /* bot.sendMessage(msg.from.id, `${coffee.getPeople(findId).user} тоже
-     хочет кофе! Найди его по ссылке t.me/${coffee.getPeople(findId).user}
-      Сейчас я его тоже приглашу к тебе!`);
-    bot.sendMessage(coffee.getPeople(findId).id, `${msg.from.first_name} хочет
-     попить с тобой кофе! Найди его по ссылке t.me/${msg.from.username}`);
-    */
     // Получаем информацию о напарнике
     const pair = coffee.getPeople(findId);
     // Получаем информацию о себе
@@ -415,12 +412,10 @@ function drink(msg) {
 
 // Проверяем ответы из телеграма
 bot.on('message', (msg) => {
-  if (msg.from.id === 214301633 || msg.from.id === 266462121
-    || msg.from.id === 235937232 || msg.from.id === 143687638) {
-    if (msg.text === 'SecretRebootMessage') {
-      notExistedFunction();
-    } else {
-      /*
+  if (msg.text === 'SecretRebootMessage') {
+    notExistedFunction();
+  } else {
+    /*
         state 0 = Регистрация.
           Только TG.
         state 1 = Зарегистрирован. Авторизован(Web). Выбор локации.
@@ -433,29 +428,25 @@ bot.on('message', (msg) => {
           Перенаправление сообщений через кофебота
           TG: кнопка "я тут", кнопка "Выйти"
           Web: кнопка "я тут", кнопка "Выйти"
-      */
-      let state = 0;
-      const checkState = coffee.getUserState(msg);
-      checkState ? state = checkState : state = 0;
+    */
+    let state = 0;
+    const checkState = coffee.getUserState(msg);
+    checkState ? state = checkState : state = 0;
 
-      switch(state) {
-        case 1:
-          inSearch(msg);
-          break;
-        case 2:
-          findPeople(msg);
-          break;
-        case 3:
-          drink(msg);
-          break;
-        default:
-          registerUser(msg);
-          break;
-      }
+    switch(state) {
+      case 1:
+        inSearch(msg);
+        break;
+      case 2:
+        findPeople(msg);
+        break;
+      case 3:
+        drink(msg);
+        break;
+      default:
+        registerUser(msg);
+        break;
     }
-  } else {
-    console.log(`В заглушку долбится сообщением ${msg.from.first_name} ${msg.from.last_name} с id ${msg.from.id}`);
-    bot.sendMessage(msg.from.id, 'Привет, я кофебот, и я немного устал. Скоро я вернусь в улучшенной версии и общаться со мной станет еще удобнее. Я пришлю тебе сообщение, когда обновлюсь.');
   }
 });
 
@@ -467,90 +458,89 @@ bot.on('callback_query', (msg) => {
       reply_markup: JSON.stringify({
         inline_keyboard: [
           [{ text: 'Сейчас', callback_data: 'rightnow' }],
-          [{ text: 'Есть пожелания', callback_data: 'now_1_0_0_0' }],
+          // [{ text: 'Есть пожелания', callback_data: 'now_1_0_0_0' }],
         ],
       }),
     };
     bot.sendMessage(msg.from.id, 'Готов прямо сейчас или есть пожелания?', options);
   }
-  if (msg.from.id === 214301633 || msg.from.id === 266462121
-     || msg.from.id === 235937232 || msg.from.id === 143687638) {
-    switch (msg.data) {
-      case 'yes_0':
-        const options = {
-          reply_markup: JSON.stringify({
-            inline_keyboard: [
-              [{ text: 'Москва, Летниковская', callback_data: 'mos_1' }],
-              [{ text: 'Москва, Спартаковская', callback_data: 'mos_2' }],
-              [{ text: 'Москва, Котельническая', callback_data: 'mos_3' }],
-              [{ text: 'Москва, Электрозаводская', callback_data: 'mos_4' }],
-              [{ text: 'Саратов, Орджоникизде', callback_data: 'sar_1' }],
-              [{ text: 'Саратов, Шелковичная', callback_data: 'sar_2' }],
-              [{ text: 'Новосибирск, Добролюбова', callback_data: 'nov_1' }],
-              [{ text: 'Новосибирск, Кирова', callback_data: 'nov_2' }],
-              [{ text: 'Казань, Лево-Булачная', callback_data: 'kaz_1' }],
-              [{ text: 'Екатеринбург, Толмачева', callback_data: 'ekat_1' }],
-              [{ text: 'Хабаровск, Амурский бульвар', callback_data: 'hab_1' }],
-              [{ text: 'Ханты-Мансийск, Мира', callback_data: 'hant_1' }],
-            ],
-          }),
-        };
-        bot.sendMessage(msg.from.id, 'В какой локации искать сочашечника?', options);
-        break;
-      case 'no':
-        bot.sendMessage(msg.from.id, 'Жаль. Ты можешь написать мне в любое время, когда захочешь кофе.');
-        break;
-      case 'mos_1':
-        goToLocation(msg, 'mos_1');
-        break;
-      case 'mos_2':
-        goToLocation(msg, 'mos_2');
-        break;
-      case 'mos_3':
-        goToLocation(msg, 'mos_3');
-        break;
-      case 'mos_4':
-        goToLocation(msg, 'mos_4');
-        break;
-      case 'sar_1':
-        goToLocation(msg, 'sar_1');
-        break;
-      case 'sar_2':
-        goToLocation(msg, 'sar_2');
-        break;
-      case 'nov_1':
-        goToLocation(msg, 'nov_1');
-        break;
-      case 'nov_2':
-        goToLocation(msg, 'nov_2');
-        break;
-      case 'kaz_1':
-        goToLocation(msg, 'kaz_1');
-        break;
-      case 'ekat_1':
-        goToLocation(msg, 'ekat_1');
-        break;
-      case 'hab_1':
-        goToLocation(msg, 'hab_1');
-        break;
-      case 'hant_1':
-        goToLocation(msg, 'hant_1');
-        break;
-      case 'rightnow':
-        findPeople(msg, coffee.getUserByTgId(msg.from.id).location);
-        break;
-    }
+  switch (msg.data) {
+    case 'yes_0':
+      const options = {
+        reply_markup: JSON.stringify({
+          inline_keyboard: [
+            [{ text: 'Москва, Летниковская', callback_data: 'mos_1' }],
+            [{ text: 'Москва, Спартаковская', callback_data: 'mos_2' }],
+            [{ text: 'Москва, Котельническая', callback_data: 'mos_3' }],
+            [{ text: 'Москва, Электрозаводская', callback_data: 'mos_4' }],
+            [{ text: 'Саратов, Орджоникизде', callback_data: 'sar_1' }],
+            [{ text: 'Саратов, Шелковичная', callback_data: 'sar_2' }],
+            [{ text: 'Новосибирск, Добролюбова', callback_data: 'nov_1' }],
+            [{ text: 'Новосибирск, Кирова', callback_data: 'nov_2' }],
+            [{ text: 'Казань, Лево-Булачная', callback_data: 'kaz_1' }],
+            [{ text: 'Екатеринбург, Толмачева', callback_data: 'ekat_1' }],
+            [{ text: 'Хабаровск, Амурский бульвар', callback_data: 'hab_1' }],
+            [{ text: 'Ханты-Мансийск, Мира', callback_data: 'hant_1' }],
+          ],
+        }),
+      };
+      bot.sendMessage(msg.from.id, 'В какой локации искать сочашечника?', options);
+      break;
+    case 'no':
+      bot.sendMessage(msg.from.id, 'Жаль. Ты можешь написать мне в любое время, когда захочешь кофе.');
+      break;
+    case 'mos_1':
+      goToLocation(msg, 'mos_1');
+      break;
+    case 'mos_2':
+      goToLocation(msg, 'mos_2');
+      break;
+    case 'mos_3':
+      goToLocation(msg, 'mos_3');
+      break;
+    case 'mos_4':
+      goToLocation(msg, 'mos_4');
+      break;
+    case 'sar_1':
+      goToLocation(msg, 'sar_1');
+      break;
+    case 'sar_2':
+      goToLocation(msg, 'sar_2');
+      break;
+    case 'nov_1':
+      goToLocation(msg, 'nov_1');
+      break;
+    case 'nov_2':
+      goToLocation(msg, 'nov_2');
+      break;
+    case 'kaz_1':
+      goToLocation(msg, 'kaz_1');
+      break;
+    case 'ekat_1':
+      goToLocation(msg, 'ekat_1');
+      break;
+    case 'hab_1':
+      goToLocation(msg, 'hab_1');
+      break;
+    case 'hant_1':
+      goToLocation(msg, 'hant_1');
+      break;
+    case 'rightnow':
+      findPeople(msg, coffee.getUserByTgId(msg.from.id).location);
+      break;
+  }
 
-    // Отдельная логика для расширенного сценария
-    if (msg.data.substr(0, 5) === 'now_1') {
-      // Разбираем строку по параметрам
+  // Отдельная логика для расширенного сценария
+  /*
+  if (msg.data.substr(0, 5) === 'now_1') {
+    // Разбираем строку по параметрам
 
-      const answers = msg.data.split('_');
-      let options = {};
-      switch (true) {
-        case answers[2] === 0 && answers[3] === 0 && answers[4] === 0:
-          // now_1_0_0_0 Первый запрос "Когда будет удобно?"
-          // now_1_1_0_0 = сейчас
+    const answers = msg.data.split('_');
+    let options = {};
+    switch (true) {
+      case answers[2] === 0 && answers[3] === 0 && answers[4] === 0:
+        // now_1_0_0_0 Первый запрос "Когда будет удобно?"
+        // now_1_1_0_0 = сейчас
           // now_1_2_0_0 = 10 минут
           // now_1_3_0_0 = 30 минут
           // now_1_4_0_0 = 60 минут
@@ -617,8 +607,5 @@ bot.on('callback_query', (msg) => {
           break;
       }
     }
-  } else {
-    console.log(`В заглушку долбится кнопкой ${msg.from.first_name} ${msg.from.last_name} с id ${msg.from.id}`);
-    bot.sendMessage(msg.from.id, 'Привет, я кофебот, и я немного устал. Скоро я вернусь в улучшенной версии и общаться со мной станет еще удобнее. Я пришлю тебе сообщение, когда обновлюсь.');
-  }
+    */
 });
