@@ -186,6 +186,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     const me = coffee.getUserById(socket.handshake.query.token);
+    // Расформировываем пару, если она была
     if (me.pair !== undefined) {
       try {
         if (me.pair.socket) {
@@ -200,6 +201,15 @@ io.on('connection', (socket) => {
       } catch (e) {
         console.error(`Ошибка расформирования пары ${e.stack}`);
       }
+    }
+
+    // Очищаем очередь, если в дисконнектнутый в ней был
+    let findId = '';
+    const checkFindId = coffee.getPeopleFromLocation(me.location);
+    checkFindId === undefined ? findId = -1 : findId = checkFindId;
+    if (findId !== -1) {
+      const finded = coffee.getPeople(findId);
+      if (finded.id === me.id || finded.tgIg === me.tgId) coffee.purgeLocation(me.location);
     }
   });
 });
