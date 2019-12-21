@@ -130,10 +130,20 @@ class Coffee {
 
   getPeopleFromLocation(loc) {
     let match = undefined;
-    for(let i = 0; i < this.people.length; i++){
-        if(this.people[i].location == loc){
-          match = i;
-        }
+    for (let i = 0; i < this.people.length; i++){
+      if(this.people[i].location == loc){
+        match = i;
+      }
+    }
+    return match;
+  }
+
+  getPeopleFromTgId(tgId) {
+    let match = undefined;
+    for (let i = 0; i < this.people.length; i++) {
+      if (this.people[i].id == tgId) {
+        match = this.people[i].location;
+      }
     }
     return match;
   }
@@ -166,6 +176,7 @@ class Coffee {
   getUserByTgId(tg) {
     return this.userStorage[this.findStorageByTgId(tg)];
   }
+
   setUserLocation(tg, loc) {
     this.userStorage[this.findStorageByTgId(tg)].location = loc;
   }

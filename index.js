@@ -77,6 +77,7 @@ io.on('connection', (socket) => {
     // Ждем от пользователя локацию и ставим в очередь, либо соединяем
     let findId = '';
     const checkFindId = coffee.getPeopleFromLocation(msg);
+    coffee.setUserLocation(coffee.getUserById(socket.handshake.query.token).tgId, msg);
 
     checkFindId === undefined ? findId = -1 : findId = checkFindId;
     if (findId === -1) {
@@ -124,14 +125,16 @@ io.on('connection', (socket) => {
           );
           // Спариваем на полчаса
           setTimeout(() => {
-            socket.emit('message', 'Ваша пара расформирована');
-            socket.emit('unpair', '');
-            pair.socket.emit('message', 'Ваша пара расформирована');
-            pair.socket.emit('unpair', '');
-            coffee.unpair(
-              { tgId: first.tgId },
-              { tgId: second.tgId },
-            );
+            if (socket.disconnected !== true) {
+              socket.emit('message', 'Ваша пара расформирована');
+              socket.emit('unpair', '');
+              pair.socket.emit('message', 'Ваша пара расформирована');
+              pair.socket.emit('unpair', '');
+              coffee.unpair(
+                { tgId: first.tgId },
+                { tgId: second.tgId },
+              );
+            }
           }, 30000 * 60);
         } else {
           // Пара из TG
@@ -156,13 +159,15 @@ io.on('connection', (socket) => {
           );
           // Спариваем на полчаса
           setTimeout(() => {
-            socket.emit('message', 'Ваша пара расформирована');
-            socket.emit('unpair', '');
-            bot.sendMessage(pair.id, 'Ваша пара расформирована');
-            coffee.unpair(
-              { tgId: first.tgId },
-              { tgId: second.tgId },
-            );
+            if (socket.disconnected !== true) {
+              socket.emit('message', 'Ваша пара расформирована');
+              socket.emit('unpair', '');
+              bot.sendMessage(pair.id, 'Ваша пара расформирована');
+              coffee.unpair(
+                { tgId: first.tgId },
+                { tgId: second.tgId },
+              );
+            }
           }, 30000 * 60);
         }
         coffee.purgeLocation(findId);
@@ -301,9 +306,8 @@ function findPeople(msg, loc) {
   checkFindId === undefined ? findId = -1 : findId = checkFindId;
   if (findId === -1) {
     // Если никого в очереди нет, то проверяем, что человека нет в других очередях
-    const myLocation = coffee.getUserByTgId(msg.from.id).location;
     let findId2 = '';
-    const checkFindId2 = coffee.getPeopleFromLocation(myLocation);
+    const checkFindId2 = coffee.getPeopleFromTgId(msg.from.id);
     checkFindId2 === undefined ? findId2 = -1 : findId2 = checkFindId2;
     if (findId2 === -1) {
       try {
@@ -321,12 +325,16 @@ function findPeople(msg, loc) {
         console.error(`Ошибка добавления пользователя в очередь ${e.stack}`);
       }
     } else {
-      const finded = coffee.getPeople(findId);
-      if (finded.tgIg === msg.from.id) {
-        // coffee.purgeLocation(myLocation);
-        // TODO: добавить отрисовку кнопки выхода
-        bot.sendMessage(msg.from.id, `Ты уже стоишь в очереди в ${myLocation}`);
-      }
+      // coffee.purgeLocation(myLocation);
+      // TODO: добавить отрисовку кнопки выхода
+      const options = {
+        reply_markup: JSON.stringify({
+          inline_keyboard: [
+            [{ text: 'Выйти', callback_data: `quit#${findId2}` }],
+          ],
+        }),
+      };
+      bot.sendMessage(msg.from.id, `Ты уже стоишь в очереди в ${findId2}`, options);
     }
   } else {
     // TODO: отрисовать кнопки выйти и я тут
@@ -530,6 +538,12 @@ bot.on('callback_query', (msg) => {
       break;
   }
 
+  // Обработка выхода из очереди
+  if (msg.data.substr(0, 4) === 'quit') {
+    const location = msg.data.split('#')[1];
+    coffee.purgeLocation(location);
+    bot.sendMessage(msg.from.id, `Ты вышел из очереди ${location}. Напиши мне, когда захочешь кофе.`);
+  }
   // Отдельная логика для расширенного сценария
   /*
   if (msg.data.substr(0, 5) === 'now_1') {

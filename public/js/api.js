@@ -34,7 +34,7 @@ socket.on('successAuth', (msg) => {
   localStorage.setItem('token', msg);
   socket.query.token = msg;
 
-  addResult('Ты авторизовался удачно и теперь можешь я могу помочь тебе найти пару для чашечки кофе!');
+  addResult('Ты авторизовался успешно и теперь можешь я могу помочь тебе найти пару для чашечки кофе!');
   formsDiv.innerHTML = `
     <button class="find_coffee">Найти сочашечника</button>
   `;
@@ -64,6 +64,9 @@ socket.on('successAuth', (msg) => {
       const opt = document.forms[0].elements.location.options;
       const selected = opt[opt.selectedIndex].value;
       socket.emit('find_coffee', selected);
+      formsDiv.innerHTML = `
+        <button class="quit_queue" onclick="location.reload()">Выйти из очереди</button>
+      `;
     });
   });
 });
