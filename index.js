@@ -124,6 +124,7 @@ io.on('connection', (socket) => {
             { tgId: second.tgId, socket: pair.socket },
           );
           // Спариваем на полчаса
+          /*
           setTimeout(() => {
             if (socket.disconnected !== true) {
               socket.emit('message', 'Ваша пара расформирована');
@@ -136,6 +137,7 @@ io.on('connection', (socket) => {
               );
             }
           }, 30000 * 60);
+          */
         } else {
           // Пара из TG
           const second = coffee.getUserByTgId(pair.id);
@@ -158,6 +160,7 @@ io.on('connection', (socket) => {
             { tgId: second.tgId },
           );
           // Спариваем на полчаса
+          /*
           setTimeout(() => {
             if (socket.disconnected !== true) {
               socket.emit('message', 'Ваша пара расформирована');
@@ -169,6 +172,7 @@ io.on('connection', (socket) => {
               );
             }
           }, 30000 * 60);
+          */
         }
         coffee.purgeLocation(findId);
       }
@@ -362,6 +366,7 @@ function findPeople(msg, loc) {
           { tgId: second.tgId, socket: pair.socket },
         );
         // Спариваем на полчаса
+        /*
         setTimeout(() => {
           if (coffee.getUserByTgId(first.tgId).pair) {
             pair.socket.emit('message', 'Ваша пара расформирована');
@@ -373,6 +378,7 @@ function findPeople(msg, loc) {
             );
           }
         }, 30000 * 60);
+        */
       } else {
         // Пара из TG
         const second = coffee.getUserByTgId(pair.id);
@@ -384,6 +390,7 @@ function findPeople(msg, loc) {
           { tgId: second.tgId },
         );
         // Спариваем на полчаса
+        /*
         setTimeout(() => {
           if (coffee.getUserByTgId(first.tgId).pair) {
             bot.sendMessage(pair.id, 'Ваша пара расформирована');
@@ -394,6 +401,7 @@ function findPeople(msg, loc) {
             );
           }
         }, 30000 * 60);
+        */
       }
       coffee.purgeLocation(findId);
     }
