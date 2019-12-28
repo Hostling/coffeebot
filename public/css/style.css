@@ -39,7 +39,7 @@ main::after {
 
 #result p {
   color: #fff;
-  font-size: 11px;
+  font-size: 21px;
   text-align: left;
 }
 
@@ -70,4 +70,9 @@ main::after {
 
 .message__you {
   color: darkgoldenrod;
+}
+
+.drink_message {
+  width: 64%;
+  height: 24px;
 }

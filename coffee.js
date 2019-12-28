@@ -80,7 +80,7 @@ class Coffee {
 
   getUserById(id) {
     let trueId = '';
-    for(let i = 0; i < this.userStorage.length; i++){
+    for (let i = 0; i < this.userStorage.length; i++) {
         if(this.userStorage[i].id == id){
           trueId = this.userStorage[i];
         }
@@ -97,17 +97,26 @@ class Coffee {
   }
 
   writeToDB() {
+    /*
     const tempJSONPeople = new Object();
-    for(let i = 0; i < this.people.length;i++){
+    for (let i = 0; i < this.people.length;i++) {
       tempJSONPeople[`${i}`] = this.people[i];
     }
-    let tempJSONUs = new Object();
-    for(let i = 0; i < this.userStorage.length;i++){
-      tempJSONUs[`${i}`] = this.userStorage[i];
+    */
+    const tempJSONUs = new Object();
+    for (let i = 0; i < this.userStorage.length; i++) {
+      let current = {};
+      for (const key in this.userStorage[i]) {
+        current[key] = this.userStorage[i][key];
+      }
+      if (current.state === 3) current.state = 1;
+      if (current.pair) delete (current.pair);
+      if (current.socket) delete (current.socket);
+      tempJSONUs[`${i}`] = current;
     }
 
     // fs.writeFile('people.db', JSON.stringify(tempJSONPeople));
-    // fs.writeFile('us.db', JSON.stringify(tempJSONUs));
+    fs.writeFileSync('us.db', JSON.stringify(tempJSONUs, null, '\t'));
   }
 
   getUserState(msg) {

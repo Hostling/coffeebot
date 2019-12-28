@@ -8,33 +8,7 @@ const addResult = (text) => {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 };
 
-let socket = io();
-
-if (localStorage.getItem('token')) {
-  socket = io({
-    query: {
-      token: localStorage.getItem('token'),
-    },
-  });
-  socket.emit('auth', localStorage.getItem('token'));
-} else {
-  addResult('Привет, я кофебот. Зарегистрируйся в <a href="https://t.me/@OpenCoffee_bot">телеграме</a> и пришли мне код из письма, чтобы начать общение.');
-  formsDiv.innerHTML = `
-    <input class="secret_code" name="secret_code" type="text">
-    <button class="submit_code">Отправить</button>
-  `;
-  document.querySelector('.submit_code').addEventListener('click', (e) => {
-    e.preventDefault();
-    socket.emit('auth', document.querySelector('.secret_code').value);
-  });
-}
-
-
-socket.on('successAuth', (msg) => {
-  localStorage.setItem('token', msg);
-  socket.query.token = msg;
-
-  addResult('Ты авторизовался успешно и теперь можешь я могу помочь тебе найти пару для чашечки кофе!');
+function setFindButton() {
   formsDiv.innerHTML = `
     <button class="find_coffee">Найти сочашечника</button>
   `;
@@ -69,10 +43,19 @@ socket.on('successAuth', (msg) => {
       `;
     });
   });
-});
+}
 
-socket.on('failedAuth', (msg) => {
-  addResult('Не смог тебя авторизовать :( Пришли мне код из письма еще раз.');
+let socket = io();
+
+if (localStorage.getItem('token')) {
+  socket = io({
+    query: {
+      token: localStorage.getItem('token'),
+    },
+  });
+  socket.emit('auth', localStorage.getItem('token'));
+} else {
+  addResult('Привет, я кофебот. Зарегистрируйся в <a href="https://t.me/@OpenCoffee_bot">телеграме</a> и пришли мне код из письма, чтобы начать общение.');
   formsDiv.innerHTML = `
     <input class="secret_code" name="secret_code" type="text">
     <button class="submit_code">Отправить</button>
@@ -81,6 +64,18 @@ socket.on('failedAuth', (msg) => {
     e.preventDefault();
     socket.emit('auth', document.querySelector('.secret_code').value);
   });
+}
+
+
+socket.on('successAuth', (msg) => {
+  localStorage.setItem('token', msg);
+  if (!socket.query) location.reload();
+  addResult('Ты авторизовался успешно и теперь я могу помочь тебе найти пару для чашечки кофе!');
+  setFindButton();
+});
+
+socket.on('failedAuth', (msg) => {
+  addResult('Не смог тебя авторизовать :( Пришли мне код из письма еще раз.');
 });
 
 socket.on('message', (msg) => {
@@ -90,12 +85,14 @@ socket.on('message', (msg) => {
 socket.on('finded', (msg) => {
   // Нашлась пара. Отображаем кнопки "Выйти" и "Я тут". Сообщения прокидываем через 'drink'
   formsDiv.innerHTML = `
-  <input class="drink_message" name="drink_message" type="text">
-  <button class="send_message">Отправить cообщение</button>
+  <form class="send_message">
+    <input class="drink_message" name="drink_message" type="text">
+    <button>Отправить cообщение</button>
+  </form>
   <button class="iam_here">Я уже тут</button>
-  <button class="quit">Выйти из беседы</button>
+  <button class="quit" onclick="location.reload()">Выйти из беседы</button>
   `;
-  document.querySelector('.send_message').addEventListener('click', (e) => {
+  document.querySelector('.send_message').addEventListener('submit', (e) => {
     e.preventDefault();
     const messageText = document.querySelector('.drink_message').value;
     if (messageText !== '') {
@@ -109,12 +106,18 @@ socket.on('finded', (msg) => {
       console.error('Нельзя отправить пустое сообщение');
     }
   });
+  document.querySelector('.iam_here').addEventListener('click', (e) => {
+    e.preventDefault();
+    addResult('<span class=\'message__you\'>Вы сообщили напарнику, что уже на месте</span');
+    socket.emit('drink', {
+      id: localStorage.getItem('token'),
+      text: 'Я уже на месте',
+    });
+  });
 });
 
 socket.on('unpair', () => {
-  formsDiv.innerHTML = `
-    <button class="find_coffee">Найти сочашечника</button>
-  `;
+  setFindButton();
 });
 /*
 let tgId = document.querySelector('.tgId');
