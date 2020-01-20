@@ -434,10 +434,33 @@ function drink(msg) {
   }
 }
 
+function exitPair(msg) {
+  const sender = coffee.getUserByTgId(msg.from.id);
+  if (sender.state !== 3) bot.sendMessage(msg.from.id, 'Вы не находитесь в паре');
+  if (sender.pair.web) {
+    sender.pair.socket.emit('message', 'Ваша пара расформирована');
+    sender.pair.socket.emit('unpair', '');
+    bot.sendMessage(msg.from.id, 'Ваша пара расформирована');
+    coffee.unpair(
+      { tgId: sender.tgId },
+      { tgId: sender.pair.tgId },
+    );
+  } else {
+    bot.sendMessage(msg.from.id, 'Ваша пара расформирована');
+    bot.sendMessage(msg.from.id, 'Ваша пара расформирована');
+    coffee.unpair(
+      { tgId: sender.tgId },
+      { tgId: sender.pair.tgId },
+    );
+  }
+}
+
 // Проверяем ответы из телеграма
 bot.on('message', (msg) => {
   if (msg.text === 'SecretRebootMessage') {
     notExistedFunction();
+  } else if (msg.text.toUpperCase() === 'ВЫЙТИ') {
+    exitPair();
   } else {
     /*
         state 0 = Регистрация.
@@ -486,7 +509,7 @@ bot.on('callback_query', (msg) => {
         ],
       }),
     };
-    bot.sendMessage(msg.from.id, 'Готов прямо сейчас или есть пожелания?', options);
+    bot.sendMessage(msg.from.id, 'Готов прямо сейчас?', options);
   }
   switch (msg.data) {
     case 'yes_0':
