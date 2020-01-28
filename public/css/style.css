@@ -1,78 +1,167 @@
 * {
   margin: 0;
   padding: 0;
-}
-main {
-  background-color: #154d51;
-  background: url('../images/bg.jpg');
-  background-size: cover;
-  position: relative;
-  min-height: 100vh;
-}
-main::after {
-  position: absolute;
-  content: '';
-  background-color: #000;
-  background-size: 100% 100%;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  opacity: 0.7;
+  font-family: SF UI Display;
+  font-style: normal;
+  font-weight: 500;
+  box-sizing: border-box;
 }
 
-.temp_message {
-  text-align: center;
-  color: #fff;
-  padding-top: 39vh;
-  font-size: 40px;
-  width: 56%;
-  margin: auto;
-  position: inherit;
-  z-index: 1;
+header {
+  padding: 37px 100px 27px;
+  height: 108px;
 }
+
+header img {
+  float: left;
+}
+
+#banner {
+  background: #3C3C3C;
+  padding: 34px 100px 28px;
+}
+
+#banner img {
+  float: left;
+}
+
+#banner_text p {
+  font-size: 20px;
+  line-height: 30px;
+  color: #FFFFFF;
+  margin-left: 70px;
+}
+
+#main, #footer {
+  padding: 50px 100px 0px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.main_item {
+  width: 49%;
+  height: 465px;
+}
+
 #result {
-   height: 200px;
-   border: #fff 2px solid;
-   overflow-y: auto;
+  background: #00BEF0;
+  box-shadow: 0px 4px 8px rgba(54, 137, 155, 0.15);
+  border-radius: 8px;
+  height: 100%;
+  padding: 0 20%;
 }
 
 #result p {
+  text-align: center;
   color: #fff;
-  font-size: 21px;
-  text-align: left;
 }
 
-#forms button {
-  background-color: #6f4e37;
+.result_title {
+  padding-top: 42px;
+  padding-bottom: 23px;
+  font-weight: 300;
+  font-size: 40px;
+  line-height: 48px;
+}
+
+.reg_form {
+  padding-top: 31px;
+}
+
+.reg_label {
+  font-weight: 300;
+  font-size: 10px;
+  line-height: 12px;
   color: #fff;
-  border: 2px #fff;
-  border-radius: 11px;
-  padding: 8px;
+  padding-left: 10px;
 }
 
-.secret_code {
-  width: 79px;
-  padding: 1px;
-  border-radius: 10px;
-  border: 1px #000;
-  font-size: 21px;
+.reg_input {
+  border: 1px solid #FFFFFF;
+  border-radius: 8px;
+  width: 100%;
+  height: 41px;
+  background-color: #00BEF0;
+  padding: 10px 20px;
+  font-size: 16px;
+  line-height: 120%;
+  color: #fff;
 }
 
-.message_time {
-  color: green;
-  padding-right: 10px;
+.result_label {
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 19px;
 }
 
-.message__bot {
-  color: tan;
+#result a {
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 19px;
+  text-decoration: none;
+  color: #fff;
+  text-align: center;
+  display: block;
+  padding-top: 20px;
 }
 
-.message__you {
-  color: darkgoldenrod;
+.reg_button {
+  display: block;
+  margin: auto;
+  font-weight: 300;
+  font-size: 16px;
+  margin-top: 17px;
+  padding: 10px 15px;
+  background-color: #fff;
+  line-height: 19px;
+  border-radius: 8px;
+  border: none;
 }
 
-.drink_message {
-  width: 64%;
-  height: 24px;
+.main_banner {
+  background: url("../img/nathan-unsplash1.png");
+  background-size: cover;
+  height: 200px;
+  position: relative;
+  border-radius: 8px;
+}
+
+.main_banner_text {
+  color: #fff;
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  font-size: 35px;
+  line-height: 120%;
+}
+
+.best {
+  margin-top: 58px;
+}
+
+.best_container {
+  display: flex;
+  justify-content: space-around;
+}
+
+.best_title {
+  font-size: 20px;
+  line-height: 24px;
+}
+
+.best_item {
+  flex-wrap: nowrap;
+  height: 190px;
+}
+
+.footer_item {
+  border: 0.2px solid #E8EDED;
+  box-shadow: 0px 10px 30px rgba(54, 137, 155, 0.05);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.footer_item p {
+  padding: 55px 10px 65px;
 }

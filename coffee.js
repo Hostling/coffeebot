@@ -120,8 +120,8 @@ class Coffee {
   }
 
   getUserState(msg) {
-    if(this.userStorage.length > 0) {
-      if(this.findStorageByTgId(msg.from.id) !== '') {
+    if (this.userStorage.length > 0) {
+      if (this.findStorageByTgId(msg.from.id) !== '') {
         return this.userStorage[this.findStorageByTgId(msg.from.id)].state;
       } else {
         return false;

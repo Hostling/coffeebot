@@ -2,16 +2,23 @@ require('dotenv').config();
 
 const TelegramBot = require('node-telegram-bot-api'); // Библиотека для TelegramAPI
 const nodemailer = require('nodemailer'); // Библиотека для отправки писем
-const express = require('express'); // Библиотека для веб-морды
 
-const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
 const Coffee = require('./coffee');
+const WebController = require('./WebController');
 
-const coffee = new Coffee();
 const TOKEN = process.env.TG_TOKEN;
 
+
+// const bot = new TelegramBot(TOKEN, { polling: true });
+const coffee = new Coffee();
+const bot = new TelegramBot(TOKEN, {});
+const web = new WebController(coffee, bot);
+/*
+Если нет хостинга с ssl сертификатом, то можно включить polling, но тогда понадобится прокси
+https://hidemy.name/ru/proxy-list/
+let bot = new TelegramBot(token, { polling: true, request: { proxy: 'http://177.22.225.237:3128', } });
+*/
+/*
 const options = {
   webHook: {
     port: 8443,
@@ -20,227 +27,17 @@ const options = {
     has_custom_certificate: false,
   },
 };
-
-const bot = new TelegramBot(TOKEN, options);
-
-module.exports = { bot };
-
-http.listen(4433, () => {
-  console.log('Веб версия запущена на порту 4433');
-});
-
-
-app.use(express.static('public'), express.static('public/images'), express.static('public/css'), express.static('public/js'));
-
-
-io.on('connection', (socket) => {
-  coffee.addSocket(socket);
-  /*
-  state 0 = Регистрация.
-    Только TG.
-  state 1 = Зарегистрирован. Авторизован(Web). Выбор локации.
-    Только TG.
-  state 2 = Стоит в очереди.
-    TG: заглушка "Ты уже в очереди" и кнопка "выйти"
-    Web: кнопка "Выйти из очереди"
-  state 3 = Разговаривают
-    Длительность 30 минут, либо до выхода одного из очереди.
-    Перенаправление сообщений через кофебота
-    TG: кнопка "я тут", кнопка "Выйти"
-    Web: кнопка "я тут", кнопка "Выйти"
-  */
-  socket.on('chat', (msg) => {
-    console.log(msg);
-  });
-
-  socket.on('auth', (msg) => {
-    const auth = coffee.tryWebAuth(msg, socket);
-    if (auth) {
-      socket.emit('successAuth', msg);
-      console.log(`Авторизация ${msg} успешна`);
-    } else {
-      socket.emit('failedAuth', 'Не нашел пользователя с таким id');
-      console.log(`Код ${msg} не найден`);
-    }
-  });
-
-  socket.on('tgMessage', (msg) => {
-    try {
-      bot.sendMessage(msg.id, msg.message);
-      console.log(`Отправлено ${msg.message} для ${msg.id}`);
-    } catch (e) {
-      console.error(`Ошибка отправки сообщения ${e.stack}`);
-    }
-  });
-
-  socket.on('find_coffee', (msg) => {
-    // Ждем от пользователя локацию и ставим в очередь, либо соединяем
-    let findId = '';
-    const checkFindId = coffee.getPeopleFromLocation(msg);
-    coffee.setUserLocation(coffee.getUserById(socket.handshake.query.token).tgId, msg);
-
-    checkFindId === undefined ? findId = -1 : findId = checkFindId;
-    if (findId === -1) {
-      // Если никого в очереди нет
-      socket.emit('message', 'Пока в очереди только ты...Как только кто-то захочет выпить - я обязательно тебе напишу!');
-      try {
-        coffee.addPeople({
-          id: socket.handshake.query.token,
-          user: 'WebUser',
-          location: msg,
-          socket,
-        });
-      } catch (e) {
-        console.error(`Ошибка добавления пользователя в очередь: ${e.stack}`);
-      }
-    } else {
-      // Получаем информацию о напарнике
-      const pair = coffee.getPeople(findId);
-      // Получаем информацию о себе
-      const first = coffee.getUserById(socket.handshake.query.token);
-      // Если человек в очереди есть, проверяем, что это не он сам
-      if (first.id === pair.id) {
-        socket.emit('message', 'В очереди все еще только ты..');
-      } else {
-        if (pair.socket) {
-          // Пара из Web
-          const second = coffee.getUserById(pair.id);
-          try {
-            // Шлем напарнику уведомление и отрисовываем кнопки в Web
-            pair.socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
-            pair.socket.emit('finded', 'true');
-          } catch (e) {
-            console.error(`Ошибка отправки сообщения первому пользователю ${e.stack}`);
-          }
-          try {
-            // Шлем себе уведомление и отрисовываем кнопки в Web
-            socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
-            socket.emit('finded', 'true');
-          } catch (e) {
-            console.error(`Ошибка отправки сообщения второму пользователю ${e.stack}`);
-          }
-          coffee.pair(
-            { tgId: first.tgId, socket },
-            { tgId: second.tgId, socket: pair.socket },
-          );
-          // Спариваем на полчаса
-          /*
-          setTimeout(() => {
-            if (socket.disconnected !== true) {
-              socket.emit('message', 'Ваша пара расформирована');
-              socket.emit('unpair', '');
-              pair.socket.emit('message', 'Ваша пара расформирована');
-              pair.socket.emit('unpair', '');
-              coffee.unpair(
-                { tgId: first.tgId },
-                { tgId: second.tgId },
-              );
-            }
-          }, 30000 * 60);
-          */
-        } else {
-          // Пара из TG
-          const second = coffee.getUserByTgId(pair.id);
-
-          try {
-            // Шлем себе и напарнику уведомление
-            socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
-            socket.emit('finded', 'true');
-          } catch (e) {
-            console.error(`Ошибка отправка сообщения первому пользователю ${e.stack}`);
-          }
-          try {
-            bot.sendMessage(pair.id, 'Коллега с веб версии бота хочет попить с тобой кофе!');
-          } catch (e) {
-            console.error(`Ошибка отправки сообщения второму пользователю ${e.stack}`);
-          }
-
-          coffee.pair(
-            { tgId: first.tgId, socket },
-            { tgId: second.tgId },
-          );
-          // Спариваем на полчаса
-          /*
-          setTimeout(() => {
-            if (socket.disconnected !== true) {
-              socket.emit('message', 'Ваша пара расформирована');
-              socket.emit('unpair', '');
-              bot.sendMessage(pair.id, 'Ваша пара расформирована');
-              coffee.unpair(
-                { tgId: first.tgId },
-                { tgId: second.tgId },
-              );
-            }
-          }, 30000 * 60);
-          */
-        }
-        coffee.purgeLocation(findId);
-      }
-    }
-  });
-
-  socket.on('drink', (msg) => {
-    coffee.drink(msg.id, msg.text);
-    // Жуткий костыль с реализацией части логики тут
-    // Перенести в класс Coffee при рефакторинге
-    const sender = coffee.getUserById(msg.id);
-    if (!sender.pair.web) {
-      try {
-        bot.sendMessage(sender.pair.tgId, msg.text);
-      } catch (e) {
-        console.error(`Ошибка отправки в TG: ${e.stack}`);
-      }
-    }
-  });
-
-  socket.on('disconnect', () => {
-    const me = coffee.getUserById(socket.handshake.query.token);
-    let secondTg = 0;
-    // Расформировываем пару, если она была
-    if (me.pair !== undefined) {
-      try {
-        if (me.pair.socket) {
-          me.pair.socket.emit('unpair', '');
-          me.pair.socket.emit('message', 'Ваша пара расформирована');
-          secondTg = coffee.getUserById(me.pair.socket.handshake.query.token).tgId;
-        } else {
-          bot.sendMessage(me.pair.tgId, 'Ваша пара расформирована');
-          secondTg = me.pair.tgId;
-        }
-        coffee.unpair(
-          { tgId: me.tgId },
-          { tgId: secondTg },
-        );
-      } catch (e) {
-        console.error(`Ошибка расформирования пары ${e.stack}`);
-      }
-    }
-
-    // Очищаем очередь, если в дисконнектнутый в ней был
-    let findId = '';
-    const checkFindId = coffee.getPeopleFromLocation(me.location);
-    checkFindId === undefined ? findId = -1 : findId = checkFindId;
-    if (findId !== -1) {
-      const finded = coffee.getPeople(findId);
-      if (finded.id === me.id || finded.tgIg === me.tgId) coffee.purgeLocation(me.location);
-    }
-  });
-});
-
-/*
-Если нет хостинга с ssl сертификатом, то можно включить polling, но тогда понадобится прокси
-https://hidemy.name/ru/proxy-list/
-let bot = new TelegramBot(token, { polling: true, request: { proxy: 'http://177.22.225.237:3128', } });
-*/
-
-
 if (process.env.ZONE === 'prod') {
   const url = `${process.env.HOST_DOMAIN}:8443`;
   bot.setWebHook(`${url}/bot${TOKEN}`, {
     certificate: `@${options.webHook.cert}`,
   });
 }
+const bot = new TelegramBot(TOKEN, options);
+*/
 
+module.exports.bot = bot;
+module.exports.coffee = coffee;
 
 coffee.readFromDB();
 
@@ -260,11 +57,14 @@ function registerUser(msg) {
     const transporter = nodemailer.createTransport({
       host: process.env.MAIL_HOST,
       port: process.env.MAIL_PORT,
-      secure: true, // Если порт 465, то true
+      secure: false, // Если порт 465, то true
       auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS,
       },
+      tls: {
+        rejectUnauthorized: false,
+      }
     });
 
     const message = {
