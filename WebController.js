@@ -4,7 +4,6 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 
-
 class WebController {
   constructor(coffee, bot) {
     this.coffee = coffee;
@@ -17,9 +16,7 @@ class WebController {
       console.log('Веб версия запущена на порту 4433');
     });
 
-
     app.use(express.static('public'), express.static('public/images'), express.static('public/css'), express.static('public/js'));
-
 
     io.on('connection', (socket) => {
       // this.coffee.addSocket(socket);
