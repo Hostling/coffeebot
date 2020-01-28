@@ -1,8 +1,10 @@
+require('dotenv').config();
 const nodemailer = require('nodemailer'); // Библиотека для отправки писем
 
 class TGController {
   constructor(coffee, bot) {
     this.bot = bot;
+    this.coffee = coffee;
     this.init();
   }
 
@@ -234,7 +236,7 @@ class TGController {
 
   message(msg) {
     if (msg.text.toUpperCase() === 'ВЫЙТИ') {
-      this.exitPair();
+      this.exitPair(msg);
     } else {
       /*
           state 0 = Регистрация.
@@ -272,7 +274,7 @@ class TGController {
   }
 
   callbackQuery(msg) {
-    function goToLocation(msg, location) {
+    const goToLocation = (msg, location) => {
       this.coffee.setUserLocation(msg.from.id, location);
       const options = {
         reply_markup: JSON.stringify({
