@@ -1,4 +1,6 @@
+require('dotenv').config();
 const express = require('express'); // Библиотека для веб-морды
+const nodemailer = require('nodemailer'); // Библиотека для отправки писем
 
 const app = express();
 const http = require('http').createServer(app);
@@ -38,6 +40,10 @@ class WebController {
         console.log(msg);
       });
 
+      socket.on('register', (msg) => {
+        this.register(msg, socket);
+      });
+
       socket.on('auth', (msg) => {
         this.auth(msg, socket);
       });
@@ -58,6 +64,64 @@ class WebController {
         this.disconnect(socket);
       });
     });
+  }
+
+  register(msg, socket) {
+    function generateId() {
+      let tempId = '';
+      for (let i = 0; i < 6; i++) {
+        tempId += Math.floor(Math.random() * 9);
+      }
+      return tempId;
+    }
+
+    function genTgId() {
+      let tempId = '';
+      for (let i = 0; i < 9; i++) {
+        tempId += Math.floor(Math.random() * 9);
+      }
+      return tempId;
+    }
+
+    function sendCode(mail, code) {
+      const transporter = nodemailer.createTransport({
+        host: process.env.MAIL_HOST,
+        port: process.env.MAIL_PORT,
+        secure: false, // Если порт 465, то true
+        auth: {
+          user: process.env.MAIL_USER,
+          pass: process.env.MAIL_PASS,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+      });
+
+      const message = {
+        from: `Coffeebot <${process.env.MAIL_USER}>`,
+        to: mail,
+        subject: 'Код авторизации для кофебота',
+        text: `Привет! Твой код ${code}. Отправь его кофеботу для авторизации`,
+      };
+
+      const info = transporter.sendMail(message);
+      console.log(`Письмо успешно отправлено ${info}`);
+    }
+
+    if (msg.indexOf('@open.ru') !== -1) {
+      const id = generateId();
+
+      this.coffee.addUser({
+        id,
+        mail: msg,
+        tgId: genTgId(),
+        state: 0,
+        isAdmin: 0,
+      });
+
+      sendCode(msg, id);
+      socket.emit('successRegister', `Я отправил письмо с кодом авторизации на почту ${msg}. Отправь мне его, пожалуйста.`);
+    }
   }
 
   auth(msg, socket) {
@@ -103,7 +167,7 @@ class WebController {
     checkFindId === undefined ? findId = -1 : findId = checkFindId;
     if (findId === -1) {
       // Если никого в очереди нет
-      socket.emit('message', 'Пока в очереди только ты...Как только кто-то захочет выпить - я обязательно тебе напишу!');
+      // socket.emit('message', 'Пока в очереди только ты...Как только кто-то захочет выпить - я обязательно тебе напишу!');
       try {
         this.coffee.addPeople({
           id: socket.handshake.query.token,
