@@ -18,8 +18,9 @@ class WebController {
       console.log('Веб версия запущена на порту 4433');
     });
 
-    app.use(express.static('public'), express.static('public/images'), express.static('public/css'), express.static('public/js'));
+    //app.use(express.static('public'), express.static('public/images'), express.static('public/css'), express.static('public/js'));
 
+    app.use(express.static('dist'));
     io.on('connection', (socket) => {
       // this.coffee.addSocket(socket);
       /*
@@ -88,10 +89,12 @@ class WebController {
         host: process.env.MAIL_HOST,
         port: process.env.MAIL_PORT,
         secure: false, // Если порт 465, то true
+        /*
         auth: {
           user: process.env.MAIL_USER,
           pass: process.env.MAIL_PASS,
         },
+        */
         tls: {
           rejectUnauthorized: false,
         },
@@ -104,8 +107,8 @@ class WebController {
         text: `Привет! Твой код ${code}. Отправь его кофеботу для авторизации`,
       };
 
-      const info = transporter.sendMail(message);
-      console.log(`Письмо успешно отправлено ${info}`);
+      const info = transporter.sendMail(message).then(() => { console.log(`Письмо успешно отправлено ${info}`) }).catch((err) => console.log('Ошибка отправки ', err));
+
     }
 
     if (msg.indexOf('@open.ru') !== -1) {
