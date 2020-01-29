@@ -159,5 +159,6 @@ socket.on('finded', (msg) => {
 });
 
 socket.on('unpair', () => {
+  location.reload();
   setFindButton();
 });
