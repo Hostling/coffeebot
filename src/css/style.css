@@ -198,7 +198,7 @@ header img {
   bottom: 19px;
   font-size: 16px;
   padding: 8px 18px 8px 18px;
-  color: #D2DCDC;
+  color: #000;
 }
 
 .chat_message_bot, .chat_message_user {

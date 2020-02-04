@@ -107,23 +107,28 @@ class WebController {
         text: `Привет! Твой код ${code}. Отправь его кофеботу для авторизации`,
       };
 
-      const info = transporter.sendMail(message).then(() => { console.log(`Письмо успешно отправлено ${info}`) }).catch((err) => console.log('Ошибка отправки ', err));
+      const info = transporter.sendMail(message).then(() => { console.log(`Письмо на ${mail} успешно отправлено`) }).catch((err) => console.log('Ошибка отправки ', err));
 
     }
 
     if (msg.indexOf('@open.ru') !== -1) {
-      const id = generateId();
+      if(this.coffee.isMailExists(msg)) {
+        sendCode(msg, this.coffee.isMailExists(msg));
+        socket.emit('successRegister', `Я отправил письмо с кодом авторизации на почту ${msg}. Отправь мне его, пожалуйста.`);
+      } else {
+        const id = generateId();
 
-      this.coffee.addUser({
-        id,
-        mail: msg,
-        tgId: genTgId(),
-        state: 0,
-        isAdmin: 0,
-      });
+        this.coffee.addUser({
+          id,
+          mail: msg,
+          tgId: genTgId(),
+          state: 0,
+          isAdmin: 0,
+        });
 
-      sendCode(msg, id);
-      socket.emit('successRegister', `Я отправил письмо с кодом авторизации на почту ${msg}. Отправь мне его, пожалуйста.`);
+        sendCode(msg, id);
+        socket.emit('successRegister', `Я отправил письмо с кодом авторизации на почту ${msg}. Отправь мне его, пожалуйста.`);
+      }
     }
   }
 
@@ -131,19 +136,17 @@ class WebController {
     const auth = this.coffee.tryWebAuth(msg, socket);
     if (auth) {
       socket.emit('successAuth', msg);
-      console.log(`Авторизация ${msg} успешна`);
     } else {
       socket.emit('failedAuth', 'Не нашел пользователя с таким id');
-      console.log(`Код ${msg} не найден`);
     }
   }
 
   tgMessage(msg) {
     try {
       this.bot.sendMessage(msg.id, msg.message);
-      console.log(`Отправлено ${msg.message} для ${msg.id}`);
+      console.log(this.coffee.getNow(), `Отправлено ${msg.message} для ${msg.id}`);
     } catch (e) {
-      console.error(`Ошибка отправки сообщения ${e.stack}`);
+      console.error(this.coffee.getNow(), `Ошибка отправки сообщения ${e.stack}`);
     }
   }
 
@@ -156,7 +159,7 @@ class WebController {
       try {
         this.bot.sendMessage(sender.pair.tgId, msg.text);
       } catch (e) {
-        console.error(`Ошибка отправки в TG: ${e.stack}`);
+        console.error(this.coffee.getNow(), `Ошибка отправки в TG: ${e.stack}`);
       }
     }
   }
@@ -195,15 +198,15 @@ class WebController {
           const second = this.coffee.getUserById(pair.id);
           try {
             // Шлем напарнику уведомление и отрисовываем кнопки в Web
-            pair.socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
             pair.socket.emit('finded', 'true');
+            pair.socket.emit('message', 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой');
           } catch (e) {
             console.error(`Ошибка отправки сообщения первому пользователю ${e.stack}`);
           }
           try {
             // Шлем себе уведомление и отрисовываем кнопки в Web
-            socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
             socket.emit('finded', 'true');
+            socket.emit('message', 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой');
           } catch (e) {
             console.error(`Ошибка отправки сообщения второму пользователю ${e.stack}`);
           }
@@ -232,13 +235,13 @@ class WebController {
 
           try {
             // Шлем себе и напарнику уведомление
-            socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
             socket.emit('finded', 'true');
+            socket.emit('message', 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой');
           } catch (e) {
             console.error(`Ошибка отправка сообщения первому пользователю ${e.stack}`);
           }
           try {
-            this.bot.sendMessage(pair.id, 'Коллега с веб версии бота хочет попить с тобой кофе!');
+            this.bot.sendMessage(pair.id, 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой');
           } catch (e) {
             console.error(`Ошибка отправки сообщения второму пользователю ${e.stack}`);
           }
@@ -275,16 +278,16 @@ class WebController {
       try {
         if (me.pair.socket) {
           me.pair.socket.emit('unpair', '');
-          me.pair.socket.emit('message', 'Ваша пара расформирована');
           secondTg = this.coffee.getUserById(me.pair.socket.handshake.query.token).tgId;
         } else {
-          this.bot.sendMessage(me.pair.tgId, 'Ваша пара расформирована');
+          this.bot.sendMessage(me.pair.tgId, 'Чат закончен. Чтобы найти еще одного сочашечника, напиши мне любое сообщение.');
           secondTg = me.pair.tgId;
         }
         this.coffee.unpair(
           { tgId: me.tgId },
           { tgId: secondTg },
         );
+        console.log(this.coffee.getNow(), `Пара ${socket.handshake.query.token} расформирована дисконнектом`);
       } catch (e) {
         console.error(`Ошибка расформирования пары ${e.stack}`);
       }

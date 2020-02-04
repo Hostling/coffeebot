@@ -49,11 +49,8 @@ const formsStorage = {
             <option value="mos_4">Москва, Электрозаводская</option>
             <option value="sar_1">Саратов, Орджоникизде</option>
             <option value="sar_2">Саратов, Шелковичная</option>
-            <option value="nov_1">Новосибирск, Добролюбова</option>
-            <option value="nov_2">Новосибирск, Кирова</option>
+            <option value="sar_3">Саратов, Мирный переулок</option>
             <option value="kaz_1">Казань, Лево-Булачная</option>
-            <option value="ekat_1">Екатеринбург, Толмачева</option>
-            <option value="hab_1">Хабаровск, Амурский бульвар</option>
             <option value="hant_1">Ханты-Мансийск, Мира</option>
           </select>
         <label>

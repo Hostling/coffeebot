@@ -7,6 +7,19 @@ class Coffee {
     this.sockets = [];
   }
 
+  isMailExists(mail) {
+    let id = 0;
+    for(let item of this.userStorage) {
+      if(item.mail.toUpperCase() === mail.toUpperCase()) id = item.id;
+    }
+    return id === 0 ? false : id;
+  }
+
+  setTrueTgId(id, tgId) {
+    const user = this.getUserById(id);
+    user.tgId = tgId;
+  }
+
   drink(id, msg) {
     // Тут жуткий костыль. Логика работает только для WEB.
     // Отправка в TG реализована в index.js
@@ -15,6 +28,12 @@ class Coffee {
       const { socket } = sender.pair;
       socket.emit('message', msg);
     }
+  }
+
+  getNow() {
+    const nowDate = new Date();
+    const editTime = (whole) => whole < 10 ? `0${whole}` : whole;
+    return `[${nowDate.getFullYear()}.${nowDate.getMonth() + 1}.${nowDate.getDate()} ${editTime(nowDate.getHours())}:${editTime(nowDate.getMinutes())}] `;
   }
 
   pair(one, two) {
@@ -37,8 +56,9 @@ class Coffee {
       } else {
         first.pair.tgId = two.tgId;
       }
+      console.log(this.getNow(), `Сформирована пара ${first.id} с ${second.id}`);
     } catch (e) {
-      console.error(`Ошибка спаривания ${e.stack}`);
+      console.log(this.getNow(), `Ошибка спаривания ${e.stack}`);
     }
   }
 
@@ -48,11 +68,11 @@ class Coffee {
       const second = this.userStorage[this.findStorageByTgId(two.tgId)];
       first.state = 1;
       second.state = 1;
+      console.log(this.getNow(), `Пара ${first.id} с ${second.id} расформирована`);
       delete (first.pair);
       delete (second.pair);
-      console.log('Пара расформирована');
     } catch (e) {
-      console.error(`Ошибка при расформировании пары: ${e.stack}`);
+      console.log(this.getNow(), `Ошибка при расформировании пары: ${e.stack}`);
     }
   }
 
@@ -68,12 +88,13 @@ class Coffee {
   }
 
   tryWebAuth(code, socket) {
-    console.log(`Прислан код: ${code}`);
     const user = this.getUserById(code);
     if (user !== '') {
       user.socket = socket;
+      console.log(this.getNow(), `Авторизация с кодом ${code} успешна`);
       return user;
     } else {
+      console.log(this.getNow(), `Авторизация с кодом ${code} неуспешна`);
       return false;
     }
   }
@@ -134,7 +155,7 @@ class Coffee {
   addUser(user) {
     this.userStorage.push(user);
     this.writeToDB();
-    console.log(this.userStorage);
+    console.log(this.getNow(), 'Зарегистрирован пользователь ', user);
   }
 
   getPeopleFromLocation(loc) {
@@ -160,7 +181,7 @@ class Coffee {
   addPeople(people) {
     this.people.push(people);
     this.writeToDB();
-    console.log(this.people);
+    console.log(this.getNow(), `Пользователь ${people.id} встал в очередь ${people.location}`);
   }
 
   purgeLocation(id) {

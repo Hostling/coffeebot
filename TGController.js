@@ -58,8 +58,10 @@ class TGController {
     }
 
     if (msg.text.indexOf('@open.ru') !== -1) {
-      if (this.coffee.findStorageByTgId(msg.from.id) !== '') {
-        this.bot.sendMessage(msg.from.id, `На почту ${this.coffee.getUserByTgId(msg.from.id).mail} я уже отправлял код авторизации. Отправь мне его, пожалуйста.`);
+      if(this.coffee.isMailExists(msg.text)) {
+        sendCode(msg, this.coffee.isMailExists(msg.text));
+        this.coffee.setTrueTgId(this.coffee.isMailExists(msg.text), msg.from.id);
+        this.bot.sendMessage(msg.from.id, `На почту ${msg.text} повторно выслал код авторизации. Отправь мне его, пожалуйста.`);
       } else {
         const id = generateId();
 
@@ -76,6 +78,7 @@ class TGController {
       }
     } else if (msg.text.match('[0-9][0-9][0-9][0-9][0-9][0-9]')) {
       if (this.coffee.authUser(msg.from.id, msg.text)) {
+        this.coffee.setTrueTgId(msg.text, msg.from.id);
         this.bot.sendMessage(msg.from.id, 'Это именно тот код, который я тебе присылал! Отправь мне любое сообщение, чтобы продолжить');
       } else {
         this.bot.sendMessage(msg.from.id, 'Код неверный :( Попробуй еще раз');
@@ -137,9 +140,17 @@ class TGController {
         if (pair.socket) {
           // Пара из web
           const second = this.coffee.getUserById(pair.id);
-          pair.socket.emit('message', 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
           pair.socket.emit('finded', 'true');
-          this.bot.sendMessage(msg.from.id, 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
+          pair.socket.emit('message', 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой');
+          const exitButton = {
+            reply_markup: JSON.stringify({
+              inline_keyboard: [
+                [{ text: 'Выйти', callback_data: 'exit' }],
+              ],
+            }),
+          };
+          this.bot.sendMessage(msg.from.id, 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой');
+          this.bot.sendMessage(msg.from.id, 'Чтобы выйти из этого чата, напиши мне "Выйти" без кавычек или нажми на эту кнопку: ', exitButton);
           this.coffee.pair(
             { tgId: first.tgId },
             { tgId: second.tgId, socket: pair.socket },
@@ -162,8 +173,17 @@ class TGController {
           // Пара из TG
           const second = this.coffee.getUserByTgId(pair.id);
           // Шлем себе и напарнику уведомление
-          this.bot.sendMessage(pair.id, 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
-          this.bot.sendMessage(msg.from.id, 'Нашелся коллега из твоей локации, который тоже готов пойти пить кофе! Можешь писать прямо сюда и я перешлю ему все твои сообщения!');
+          const exitButton = {
+            reply_markup: JSON.stringify({
+              inline_keyboard: [
+                [{ text: 'Выйти', callback_data: 'exit' }],
+              ],
+            }),
+          };
+          this.bot.sendMessage(pair.id, 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой');
+          this.bot.sendMessage(pair.id, 'Чтобы выйти из этого чата, напиши мне "Выйти" без кавычек или нажми на эту кнопку: ', exitButton);
+          this.bot.sendMessage(msg.from.id, 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой');
+          this.bot.sendMessage(msg.from.id, 'Чтобы выйти из этого чата, напиши мне "Выйти" без кавычек или нажми на эту кнопку: ', exitButton);
           this.coffee.pair(
             { tgId: first.tgId },
             { tgId: second.tgId },
@@ -217,16 +237,15 @@ class TGController {
     const sender = this.coffee.getUserByTgId(msg.from.id);
     if (sender.state !== 3) this.bot.sendMessage(msg.from.id, 'Вы не находитесь в паре');
     if (sender.pair.web) {
-      sender.pair.socket.emit('message', 'Ваша пара расформирована');
       sender.pair.socket.emit('unpair', '');
-      this.bot.sendMessage(msg.from.id, 'Ваша пара расформирована');
+      this.bot.sendMessage(msg.from.id, 'Чат закончен. Чтобы найти еще одного сочашечника, напиши мне любое сообщение.');
       this.coffee.unpair(
         { tgId: sender.tgId },
         { tgId: sender.pair.tgId },
       );
     } else {
-      this.bot.sendMessage(msg.from.id, 'Ваша пара расформирована');
-      this.bot.sendMessage(msg.from.id, 'Ваша пара расформирована');
+      this.bot.sendMessage(msg.from.id, 'Чат закончен. Чтобы найти еще одного сочашечника, напиши мне любое сообщение.');
+      this.bot.sendMessage(sender.pair.tgId, 'Чат закончен. Чтобы найти еще одного сочашечника, напиши мне любое сообщение.');
       this.coffee.unpair(
         { tgId: sender.tgId },
         { tgId: sender.pair.tgId },
@@ -297,12 +316,14 @@ class TGController {
               [{ text: 'Москва, Электрозаводская', callback_data: 'mos_4' }],
               [{ text: 'Саратов, Орджоникизде', callback_data: 'sar_1' }],
               [{ text: 'Саратов, Шелковичная', callback_data: 'sar_2' }],
-              [{ text: 'Новосибирск, Добролюбова', callback_data: 'nov_1' }],
-              [{ text: 'Новосибирск, Кирова', callback_data: 'nov_2' }],
+              [{ text: 'Саратов, Мирный переулок', callback_data: 'sar_3' }],
               [{ text: 'Казань, Лево-Булачная', callback_data: 'kaz_1' }],
-              [{ text: 'Екатеринбург, Толмачева', callback_data: 'ekat_1' }],
-              [{ text: 'Хабаровск, Амурский бульвар', callback_data: 'hab_1' }],
               [{ text: 'Ханты-Мансийск, Мира', callback_data: 'hant_1' }],
+            //  [{ text: 'Новосибирск, Добролюбова', callback_data: 'nov_1' }],
+            //  [{ text: 'Новосибирск, Кирова', callback_data: 'nov_2' }],
+            //  [{ text: 'Екатеринбург, Толмачева', callback_data: 'ekat_1' }],
+            //  [{ text: 'Хабаровск, Амурский бульвар', callback_data: 'hab_1' }],
+            //  [{ text: 'Ханты-Мансийск, Мира', callback_data: 'hant_1' }],
             ],
           }),
         };
@@ -329,6 +350,9 @@ class TGController {
       case 'sar_2':
         goToLocation(msg, 'sar_2');
         break;
+      case 'sar_3':
+        goToLocation(msg, 'sar_3');
+        break;
       case 'nov_1':
         goToLocation(msg, 'nov_1');
         break;
@@ -349,6 +373,9 @@ class TGController {
         break;
       case 'rightnow':
         this.findPeople(msg, this.coffee.getUserByTgId(msg.from.id).location);
+        break;
+      case 'exit':
+        exitPair(msg);
         break;
     }
 
