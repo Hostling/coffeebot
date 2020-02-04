@@ -258,3 +258,7 @@ header img {
   color: #00BEF0;
   bottom: 2px;
 }
+
+.footer_item img {
+  max-width: 103px;
+}

@@ -59,7 +59,7 @@ class TGController {
 
     if (msg.text.indexOf('@open.ru') !== -1) {
       if(this.coffee.isMailExists(msg.text)) {
-        sendCode(msg, this.coffee.isMailExists(msg.text));
+        sendCode(msg.text, this.coffee.isMailExists(msg.text));
         this.coffee.setTrueTgId(this.coffee.isMailExists(msg.text), msg.from.id);
         this.bot.sendMessage(msg.from.id, `На почту ${msg.text} повторно выслал код авторизации. Отправь мне его, пожалуйста.`);
       } else {
