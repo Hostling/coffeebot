@@ -124,11 +124,11 @@ socket.on('successAuth', (msg) => {
   setFindButton();
 });
 
-/*
 socket.on('failedAuth', (msg) => {
-  addResult('Не смог тебя авторизовать :( Пришли мне код из письма еще раз.');
+  localStorage.clear();
+  location.reload();
 });
-*/
+
 
 socket.on('message', (msg) => {
   addResult(msg);
