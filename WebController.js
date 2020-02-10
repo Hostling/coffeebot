@@ -1,4 +1,5 @@
 require('dotenv').config();
+const fs = require('fs');
 const express = require('express'); // Библиотека для веб-морды
 const nodemailer = require('nodemailer'); // Библиотека для отправки писем
 
@@ -136,9 +137,17 @@ class WebController {
     const auth = this.coffee.tryWebAuth(msg, socket);
     if (auth) {
       socket.emit('successAuth', msg);
+      if(this.coffee.getUserById(socket.handshake.query.token).location !== undefined) socket.emit('setbest', this.setBest(socket));
     } else {
       socket.emit('failedAuth', 'Не нашел пользователя с таким id');
     }
+  }
+
+  setBest(socket){
+    const locations = JSON.parse(fs.readFileSync('locations.json', 'utf8'));
+    const userLocation = this.coffee.getUserById(socket.handshake.query.token).location;
+    const locationProps = locations[userLocation];
+    socket.emit('setBest', JSON.stringify(locationProps));
   }
 
   tgMessage(msg) {
@@ -155,11 +164,13 @@ class WebController {
     // Жуткий костыль с реализацией части логики тут
     // Перенести в класс this.coffee при рефакторинге
     const sender = this.coffee.getUserById(msg.id);
-    if (!sender.pair.web) {
-      try {
-        this.bot.sendMessage(sender.pair.tgId, msg.text);
-      } catch (e) {
-        console.error(this.coffee.getNow(), `Ошибка отправки в TG: ${e.stack}`);
+    if(sender.pair !== undefined) {
+      if (!sender.pair.web) {
+        try {
+          this.bot.sendMessage(sender.pair.tgId, msg.text);
+        } catch (e) {
+          console.error(this.coffee.getNow(), `Ошибка отправки в TG: ${e.stack}`);
+        }
       }
     }
   }
@@ -241,7 +252,15 @@ class WebController {
             console.error(`Ошибка отправка сообщения первому пользователю ${e.stack}`);
           }
           try {
-            this.bot.sendMessage(pair.id, 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой');
+            this.bot.sendMessage(pair.id, 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой. Только, пожалуйста, без фото :)');
+            const exitButton = {
+              reply_markup: JSON.stringify({
+                inline_keyboard: [
+                  [{ text: 'Выйти', callback_data: 'exit' }],
+                ],
+              }),
+            };
+            this.bot.sendMessage(pair.id, 'Чтобы выйти из этого чата, напиши мне "Выйти" без кавычек или нажми на эту кнопку: ', exitButton);
           } catch (e) {
             console.error(`Ошибка отправки сообщения второму пользователю ${e.stack}`);
           }

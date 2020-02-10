@@ -10,8 +10,8 @@ const TOKEN = process.env.TG_TOKEN;
 
 
 const coffee = new Coffee();
-const bot = new TelegramBot(TOKEN, { polling: true });
-// const bot = new TelegramBot(TOKEN, {});
+// const bot = new TelegramBot(TOKEN, { polling: true });
+const bot = new TelegramBot(TOKEN, {});
 // const bot = new TelegramBot(TOKEN, { polling: true, request: { proxy: 'http://177.22.225.237:3128' } });
 bot.on('polling_error', (err) => console.log(coffee.getNow(), 'Ошибка коннекта к серверам телеграма'));
 const web = new WebController(coffee, bot);

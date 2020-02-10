@@ -1,0 +1,236 @@
+{
+  "mos_1": {
+    "0": {
+      "stars": 3,
+      "name": "McDonalds",
+      "logo": "mcdonalds.jpg",
+      "address": "ул. Кожевническая 8/4с1",
+      "distance": 170,
+      "price": 99
+    },
+    "1": {
+      "stars": 4,
+      "name": "Starbucks",
+      "logo": "starbucks.jpg",
+      "address": "ул. Летниковская, 2с1",
+      "distance": 180,
+      "price": 325
+    },
+    "2": {
+      "stars": 5,
+      "name": "Surf Coffee x Leto",
+      "logo": "surfcoffee.png",
+      "address": "ул. Летниковская, 4с5",
+      "distance": 190,
+      "price": 199
+    }
+  },
+  "mos_2": {
+    "0": {
+      "stars": 4,
+      "name": "Prime",
+      "logo": "prime.png",
+      "address": "ул. Нижняя Красносельская, 39, стр. 1",
+      "distance": 510,
+      "price": 189
+    },
+    "1": {
+      "stars": 4,
+      "name": "Шоколадница",
+      "logo": "chocolade.jpg",
+      "address": "ул. Бауманская, 33/2с1",
+      "distance": 570,
+      "price": 230
+    },
+    "2": {
+      "stars": 3,
+      "name": "McDonalds",
+      "logo": "mcdonalds.jpg",
+      "address": "ул. Ладожская, 1/2",
+      "distance": 830,
+      "price": 99
+    }
+  },
+  "mos_3": {
+    "0": {
+      "stars": 4,
+      "name": "КофеХауз",
+      "logo": "coffeehouse.jpg",
+      "address": "ул. Нижняя Радищевская, 5с2 ",
+      "distance": 580,
+      "price": 125
+    },
+    "1": {
+      "stars": 3,
+      "name": "McDonalds",
+      "logo": "mcdonalds.jpg",
+      "address": "ул. Таганская 1с1",
+      "distance": 700,
+      "price": 99
+    },
+    "2": {
+      "stars": 4,
+      "name": "Шоколадница",
+      "logo": "chocolade.jpg",
+      "address": "ул. Большие Каменщики, 2 ",
+      "distance": 710,
+      "price": 230
+    }
+  },
+  "mos_4": {
+    "0": {
+      "stars": 3,
+      "name": "Coffee Point",
+      "logo": "coffeepoint.jpg",
+      "address": "Электрозаводская ул., 27",
+      "distance": 130,
+      "price": 115
+    },
+    "1": {
+      "stars": 4,
+      "name": "Правда кофе",
+      "logo": "basic1.jpg",
+      "address": "Преображенская площадь, 8",
+      "distance": 680,
+      "price": 70
+    },
+    "2": {
+      "stars": 4,
+      "name": "Starbucks",
+      "logo": "starbucks.jpg",
+      "address": "Преображенская площадь, 8",
+      "distance": 680,
+      "price": 325
+    }
+  },
+  "sar_1": {
+    "0": {
+      "stars": 3,
+      "name": "McDonalds",
+      "logo": "mcdonalds.jpg",
+      "address": "ул. Н.Г. Чернышевского, 1А",
+      "distance": 1400,
+      "price": 99
+    },
+    "1": {
+      "stars": 3,
+      "name": "KFC",
+      "logo": "kfc.png",
+      "address": "ул. Авиастроителей, 3Г",
+      "distance": 1500,
+      "price": 99
+    },
+    "2": {
+      "stars": 4,
+      "name": "Кофе и шоколад",
+      "logo": "basic2.jpg",
+      "address": "пл. Орджоникидзе, 1",
+      "distance": 1600,
+      "price": 150
+    }
+  },
+  "sar_2": {
+    "0": {
+      "stars": 4,
+      "name": "Volga Coffee Roasters",
+      "logo": "basic1.jpg",
+      "address": "ул. Аткарская, 66Г",
+      "distance": 2600,
+      "price": 150
+    },
+    "1": {
+      "stars": 4,
+      "name": "Central Perk",
+      "logo": "basic2.jpg",
+      "address": "Вольская ул., 63/69",
+      "distance": 4500,
+      "price": 200
+    },
+    "2": {
+      "stars": 3,
+      "name": "McDonalds",
+      "logo": "mcdonalds.jpg",
+      "address": "пр-т Кирова, 43",
+      "distance": 4500,
+      "price": 99
+    }
+  },
+  "sar_3": {
+    "0": {
+      "stars": 3,
+      "name": "McDonalds",
+      "logo": "mcdonalds.jpg",
+      "address": "пр-т Кирова, 43",
+      "distance": 640,
+      "price": 99
+    },
+    "1": {
+      "stars": 4,
+      "name": "Central Perk",
+      "logo": "basic2.jpg",
+      "address": "Вольская ул., 63/69",
+      "distance": 670,
+      "price": 200
+    },
+    "2": {
+      "stars": 3,
+      "name": "Trista Barista",
+      "logo": "basic3.jpg",
+      "address": "Вольская ул., 61",
+      "distance": 610,
+      "price": 150
+    }
+  },
+  "kaz_1": {
+    "0": {
+      "stars": 4,
+      "name": "Лось и лосось",
+      "logo": "basic1.jpg",
+      "address": "ул. Чернышевского, 27",
+      "distance": 77,
+      "price": 180
+    },
+    "1": {
+      "stars": 4,
+      "name": "Кофейня 9 3/4",
+      "logo": "basic2.jpg",
+      "address": "ул. Мусы Джалиля, 6/1",
+      "distance": 290,
+      "price": 120
+    },
+    "2": {
+      "stars": 4,
+      "name": "Moonwood",
+      "logo": "basic3.jpg",
+      "address": "ул. Чернышевского, 33",
+      "distance": 380,
+      "price": 110
+    }
+  },
+  "hant_1": {
+    "0": {
+      "stars": 3,
+      "name": "Мункенс Кофе",
+      "logo": "basic1.jpg",
+      "address": "ул. Лопарева, 4",
+      "distance": 240,
+      "price": 180
+    },
+    "1": {
+      "stars": 4,
+      "name": "Traveler’s Coffee",
+      "logo": "Travelers.jpg",
+      "address": "ул. Мира, 45",
+      "distance": 670,
+      "price": 150
+    },
+    "2": {
+      "stars": 4,
+      "name": "Traveler’s Coffee",
+      "logo": "Travelers.jpg",
+      "address": "ул. Ленина, 39",
+      "distance": 830,
+      "price": 150
+    }
+  }
+}

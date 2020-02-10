@@ -149,7 +149,7 @@ class TGController {
               ],
             }),
           };
-          this.bot.sendMessage(msg.from.id, 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой');
+          this.bot.sendMessage(msg.from.id, 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой. Только, пожалуйста, без фото :)');
           this.bot.sendMessage(msg.from.id, 'Чтобы выйти из этого чата, напиши мне "Выйти" без кавычек или нажми на эту кнопку: ', exitButton);
           this.coffee.pair(
             { tgId: first.tgId },
@@ -180,9 +180,9 @@ class TGController {
               ],
             }),
           };
-          this.bot.sendMessage(pair.id, 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой');
+          this.bot.sendMessage(pair.id, 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой. Только, пожалуйста, без фото :)');
           this.bot.sendMessage(pair.id, 'Чтобы выйти из этого чата, напиши мне "Выйти" без кавычек или нажми на эту кнопку: ', exitButton);
-          this.bot.sendMessage(msg.from.id, 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой');
+          this.bot.sendMessage(msg.from.id, 'Я нашел тебе пару для кофе! Пиши сюда, и общайся напрямую с коллегой. Только, пожалуйста, без фото :)');
           this.bot.sendMessage(msg.from.id, 'Чтобы выйти из этого чата, напиши мне "Выйти" без кавычек или нажми на эту кнопку: ', exitButton);
           this.coffee.pair(
             { tgId: first.tgId },
@@ -224,11 +224,13 @@ class TGController {
     this.coffee.drink(sender.id, msg.text);
     // Жуткий костыль с реализацией части с отправкой в TG в этом файле
     // Перенести в класс this.coffee при рефакторинге
-    if (!sender.pair.web) {
-      try {
-        this.bot.sendMessage(sender.pair.tgId, msg.text);
-      } catch (e) {
-        console.error(`Ошибка отправки в TG: ${e.stack}`);
+    if(sender.pair !== undefined) {
+      if (!sender.pair.web) {
+        try {
+          this.bot.sendMessage(sender.pair.tgId, msg.text);
+        } catch (e) {
+          console.error(`Ошибка отправки в TG: ${e.stack}`);
+        }
       }
     }
   }
@@ -236,20 +238,22 @@ class TGController {
   exitPair(msg) {
     const sender = this.coffee.getUserByTgId(msg.from.id);
     if (sender.state !== 3) this.bot.sendMessage(msg.from.id, 'Вы не находитесь в паре');
-    if (sender.pair.web) {
-      sender.pair.socket.emit('unpair', '');
-      this.bot.sendMessage(msg.from.id, 'Чат закончен. Чтобы найти еще одного сочашечника, напиши мне любое сообщение.');
-      this.coffee.unpair(
-        { tgId: sender.tgId },
-        { tgId: sender.pair.tgId },
-      );
-    } else {
-      this.bot.sendMessage(msg.from.id, 'Чат закончен. Чтобы найти еще одного сочашечника, напиши мне любое сообщение.');
-      this.bot.sendMessage(sender.pair.tgId, 'Чат закончен. Чтобы найти еще одного сочашечника, напиши мне любое сообщение.');
-      this.coffee.unpair(
-        { tgId: sender.tgId },
-        { tgId: sender.pair.tgId },
-      );
+    if(sender.pair !== undefined) {
+      if (sender.pair.web) {
+        sender.pair.socket.emit('unpair', '');
+        this.bot.sendMessage(msg.from.id, 'Чат закончен. Чтобы найти еще одного сочашечника, напиши мне любое сообщение.');
+        this.coffee.unpair(
+          { tgId: sender.tgId },
+          { tgId: sender.pair.tgId },
+        );
+      } else {
+        this.bot.sendMessage(msg.from.id, 'Чат закончен. Чтобы найти еще одного сочашечника, напиши мне любое сообщение.');
+        this.bot.sendMessage(sender.pair.tgId, 'Чат закончен. Чтобы найти еще одного сочашечника, напиши мне любое сообщение.');
+        this.coffee.unpair(
+          { tgId: sender.tgId },
+          { tgId: sender.pair.tgId },
+        );
+      }
     }
   }
 

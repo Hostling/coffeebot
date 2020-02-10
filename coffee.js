@@ -24,9 +24,11 @@ class Coffee {
     // Тут жуткий костыль. Логика работает только для WEB.
     // Отправка в TG реализована в index.js
     const sender = this.getUserById(id);
-    if (sender.pair.web) {
-      const { socket } = sender.pair;
-      socket.emit('message', msg);
+    if (sender.pair !== undefined){
+      if (sender.pair.web) {
+        const { socket } = sender.pair;
+        socket.emit('message', msg);
+      }
     }
   }
 

@@ -129,6 +129,39 @@ socket.on('failedAuth', (msg) => {
   location.reload();
 });
 
+socket.on('setBest', (msg) => {
+  const points = JSON.parse(msg);
+  const bestContainer = document.querySelector('.best_container');
+  function generateItem(item) {
+    let stars = '';
+    switch(item.stars) {
+      case 3:
+        stars = '3stars.jpg';
+        break;
+      case 4:
+        stars = '4stars.jpg';
+        break;
+      case 5:
+        stars = '5stars.jpg';
+        break;
+    }
+    return `
+      <div class='best_item'>
+        <img class='stars' src='img/${stars}' alt='stars'>
+        <img class='best_logo' src='img/${item.logo}' alt='best_logo'>
+        <span class='best_title'>${item.name}</span>
+        <span class='best_prop'>${item.address}</span>
+        <span class='best_prop'>~${item.distance}</span>
+        <span class='best_prop'>~${item.price}</span>
+      </div>
+    `;
+  }
+  let items = '';
+  for(let i = 0; i < 3; i++) {
+    items += generateItem(points[i]);
+  }
+  bestContainer.innerHTML = items;
+});
 
 socket.on('message', (msg) => {
   addResult(msg);
