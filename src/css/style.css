@@ -1,7 +1,7 @@
 * {
   margin: 0;
   padding: 0;
-  font-family: SF UI Display;
+  font-family: sans-serif;
   font-style: normal;
   font-weight: 500;
   box-sizing: border-box;
@@ -263,6 +263,27 @@ header img {
   max-width: 103px;
 }
 
-.best_item img {
-  max-width: 105px;
+.best_logo {
+  width: 121px;
+  display: block;
+  border: 1px solid #E8EDED;
+  border-radius: 8px;
+}
+
+.best_name {
+  display: block;
+  color: #00BEF0;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 19px;
+  border-bottom: 1px solid #D2DCDC;
+  padding: 5px 0px;
+  margin-bottom: 6px;
+}
+
+.best_prop {
+  display: block;
+  font-weight: 300;
+  font-size: 8px;
+  line-height: 10px;
 }
